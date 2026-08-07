@@ -1,0 +1,170 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary-green: #1B5E20;
+  --color-secondary-green: #4CAF50;
+  --color-accent-green: #8BC34A;
+  --color-soil-brown: #8D6E63;
+  --color-golden-harvest: #F9A825;
+  --color-sunrise: #FB8C00;
+  --color-mountain-gray: #607D8B;
+  --color-bg-cream: #FAF9F4;
+  --color-charcoal: #263238;
+}
+
+:root {
+  --primary: #4a7c59;      /* Warm, earthy green */
+  --primary-hover: #3d6649;
+  --primary-light: #eaf2eb;
+  --primary-dark: #2c4d36;
+  --accent: #d4a373;       /* Warm sandy accent */
+  --bg-main: #faf7f2;      /* Warm off-white / stone */
+  --card-bg: #ffffff;
+  --text-main: #3a352f;    /* Charcoal/brown instead of harsh black */
+  --text-muted: #8c8273;
+  --border-color: #e8e2d9;
+  --shadow-sm: 0 4px 14px 0 rgba(140, 130, 115, 0.08);
+  --shadow-md: 0 10px 24px -4px rgba(140, 130, 115, 0.12);
+  --shadow-lg: 0 20px 30px -8px rgba(140, 130, 115, 0.15);
+  --font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: var(--bg-main);
+  color: var(--text-main);
+  font-family: var(--font-family);
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+}
+
+#root {
+  width: 100%;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Custom UI Components */
+.eco-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 1rem;
+  padding: 1.5rem;
+  box-shadow: var(--shadow-sm);
+  transition: all 0.2s ease-in-out;
+}
+
+.eco-card:hover {
+  box-shadow: var(--shadow-md);
+  border-color: #cbd5e1;
+}
+
+.eco-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.eco-badge-success {
+  background-color: #dcfce7;
+  color: #15803d;
+}
+
+.eco-badge-warning {
+  background-color: #fef9c3;
+  color: #a16207;
+}
+
+.eco-badge-info {
+  background-color: #e0f2fe;
+  color: #0369a1;
+}
+
+.eco-badge-danger {
+  background-color: #fee2e2;
+  color: #b91c1c;
+}
+
+.btn-primary {
+  background-color: var(--primary);
+  color: #ffffff;
+  font-weight: 600;
+  padding: 0.625rem 1.25rem;
+  border-radius: 0.5rem;
+  border: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  transition: all 0.2s;
+}
+
+.btn-primary:hover {
+  background-color: var(--primary-hover);
+  transform: translateY(-1px);
+}
+
+.btn-secondary {
+  background-color: #ffffff;
+  color: var(--text-main);
+  font-weight: 600;
+  padding: 0.625rem 1.25rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--border-color);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  transition: all 0.2s;
+}
+
+.btn-secondary:hover {
+  background-color: #f1f5f9;
+}
+
+/* Glassmorphism accent background */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Leaflet Custom Marker Override */
+.custom-leaflet-marker-sleek {
+  background: none !important;
+  border: none !important;
+}
+
+@keyframes scan {
+  0%, 100% { top: 10%; }
+  50% { top: 90%; }
+}
