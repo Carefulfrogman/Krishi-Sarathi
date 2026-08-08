@@ -312,7 +312,7 @@ export const AiAssistant = () => {
         
         {/* Left Side: Chat History Area */}
         <div className="flex-1 flex flex-col min-h-0">
-          <div className="chat-scroll-area flex-1 p-6 sm:p-8 space-y-6">
+          <div className="flex-1 overflow-y-auto p-6 sm:p-8 space-y-6 scroll-smooth" style={{scrollbarWidth:'thin', scrollbarColor:'#d1fae5 transparent'}}>
             {messages.map((msg) => (
               <div
                 key={msg.id}

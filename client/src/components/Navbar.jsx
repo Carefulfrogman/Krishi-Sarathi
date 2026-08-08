@@ -9,6 +9,7 @@ export const Navbar = ({ user, onLogout, onToggleSidebar }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const navigate = useNavigate();
   const { language, toggleLanguage, t } = useLanguage();
+  const isNe = language === 'ne';
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -18,113 +19,90 @@ export const Navbar = ({ user, onLogout, onToggleSidebar }) => {
   };
 
   return (
-    <header className="sticky top-0 z-40 bg-[#063822] text-white border-b border-[#B4B394]/30 shadow-md">
-      {/* Decorative Accent Trim */}
-      <div className="h-1 bg-gradient-to-r from-[#D99A17] via-[#7B8428] to-[#174F32]"></div>
-
+    <header className="sticky top-0 z-30 bg-white text-slate-800 border-b border-slate-200 shadow-2xs">
       <div className="flex items-center justify-between px-4 py-3 md:px-6">
-        {/* Left: Brand + Sidebar Toggle */}
-        <div className="flex items-center gap-3">
+        
+        {/* Left: Mobile Sidebar Toggle & Search Bar */}
+        <div className="flex items-center gap-3 flex-1 max-w-xl">
           <button
             onClick={onToggleSidebar}
-            className="p-2 text-white/90 bg-white/10 rounded-xl hover:bg-white/20 lg:hidden transition"
+            className="p-2 text-slate-700 bg-slate-100 rounded-xl hover:bg-slate-200 lg:hidden transition"
             aria-label={t('Open Navigation Menu', 'नेभिगेसन मेनु खोल्नुहोस्')}
           >
-            <Icon name="activity" size={22} />
+            <Icon name="activity" size={20} />
           </button>
 
-          <Link to="/dashboard" className="flex items-center gap-2.5 font-extrabold text-xl sm:text-2xl tracking-tight text-white">
-            <div className="w-10 h-10 rounded-2xl bg-[#174F32] flex items-center justify-center text-white shadow-md border border-[#B4B394]/40">
-              <Icon name="sprout" size={24} />
-            </div>
-            <span className="flex items-center gap-1.5 font-black">
-              Eco<span className="text-[#D99A17]">Trace</span>
-              <span className="text-[10px] bg-white/15 text-white font-bold px-2 py-0.5 rounded border border-white/20">
-                🇳🇵 Nepal
-              </span>
-            </span>
-          </Link>
+          {/* Optimized Modern Search Bar */}
+          <form onSubmit={handleSearch} className="flex items-center w-full relative">
+            <Icon name="search" size={16} className="absolute left-3.5 text-slate-400 pointer-events-none" />
+            <input
+              type="text"
+              placeholder={t('Search crops, fields, weather, advice...', 'बाली, जग्गा, मौसम, सल्लाह खोज्नुहोस्...')}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 text-xs bg-slate-50/90 border border-slate-200/90 rounded-xl text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#013822] focus:border-transparent focus:bg-white transition font-medium shadow-2xs"
+            />
+          </form>
         </div>
 
-        {/* Center: Search */}
-        <form onSubmit={handleSearch} className="hidden md:flex items-center flex-1 max-w-md mx-6 relative">
-          <Icon name="search" size={18} className="absolute left-3.5 text-white/60" />
-          <input
-            type="text"
-            placeholder={t('🔍 Search crops, fields, earnings, weather...', '🔍 बाली, जग्गा, आम्दानी, मौसम खोज्नुहोस्...')}
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 text-xs sm:text-sm bg-white/15 border border-white/20 rounded-xl text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-[#D99A17] transition font-medium"
-          />
-        </form>
+        {/* Right: Controls & Profile */}
+        <div className="flex items-center gap-2 sm:gap-4 ml-4">
 
-        {/* Right: Actions */}
-        <div className="flex items-center gap-2 sm:gap-3">
-
-          {/* ── Global Language Toggle ── */}
+          {/* Global Language Toggle Button Pill */}
           <button
             onClick={toggleLanguage}
             title={t('Switch to Nepali', 'अंग्रेजीमा स्विच गर्नुहोस्')}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-black rounded-xl border-2 transition hover:scale-105 active:scale-95 select-none"
-            style={{
-              backgroundColor: language === 'ne' ? '#D99A17' : 'rgba(255,255,255,0.12)',
-              color: '#FFFFFF',
-              borderColor: '#D99A17',
-            }}
+            className="flex items-center p-1 text-xs font-black rounded-full border border-slate-200 bg-slate-100 transition select-none shadow-2xs"
           >
-            {language === 'ne' ? (
-              <>🇬🇧 <span>EN</span></>
-            ) : (
-              <>🇳🇵 <span>नेपाली</span></>
-            )}
+            <span className={`px-3 py-1 rounded-full transition-all ${language === 'en' ? 'bg-[#013822] text-white shadow-2xs font-extrabold' : 'text-slate-600 font-bold'}`}>
+              EN
+            </span>
+            <span className={`px-3 py-1 rounded-full transition-all ${language === 'ne' ? 'bg-[#013822] text-white shadow-2xs font-extrabold' : 'text-slate-600 font-bold'}`}>
+              नेपाली
+            </span>
           </button>
 
-          {/* Add Field */}
-          <Link
-            to="/farms/register"
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold bg-[#174F32] hover:bg-[#063822] text-white rounded-xl transition shadow-xs border border-[#B4B394]/30"
-          >
-            <Icon name="plus" size={16} />
-            <span className="hidden sm:inline">{t('+ Add Field', '+ जग्गा थप्नुहोस्')}</span>
-          </Link>
-
-          {/* Notifications */}
+          {/* Notifications Bell */}
           <div className="relative">
             <button
               onClick={() => setShowNotifications(!showNotifications)}
-              className="relative p-2 text-white/90 bg-white/10 rounded-xl hover:bg-white/20 transition"
+              className="relative p-2 text-slate-700 bg-slate-50 rounded-full border border-slate-200 hover:bg-slate-100 transition"
               aria-label={t('Alerts', 'सूचनाहरू')}
             >
-              <Icon name="bell" size={20} />
-              <span className="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-[#D99A17] rounded-full ring-2 ring-[#063822] animate-pulse"></span>
+              <Icon name="bell" size={18} />
+              <span className="absolute -top-1 -right-1 w-4 h-4 bg-rose-500 text-white text-[9px] font-black rounded-full flex items-center justify-center border-2 border-white shadow-2xs">
+                3
+              </span>
             </button>
             {showNotifications && (
               <Notifications onClose={() => setShowNotifications(false)} />
             )}
           </div>
 
-          {/* User Profile */}
-          <Link to="/profile" className="flex items-center gap-2.5 p-1 bg-white/10 border border-white/20 rounded-xl hover:bg-white/20 transition text-white">
-            <div className="w-9 h-9 rounded-lg bg-[#174F32] text-white font-bold flex items-center justify-center text-sm shadow-xs border border-[#B4B394]/40">
+          {/* User Profile Dropdown Pill */}
+          <Link to="/profile" className="flex items-center gap-2.5 p-1.5 bg-slate-50 border border-slate-200 rounded-full hover:bg-slate-100 transition">
+            <div className="w-8 h-8 rounded-full bg-emerald-700 text-white font-black flex items-center justify-center text-sm shadow-2xs overflow-hidden border border-emerald-800">
               🌾
             </div>
-            <div className="hidden lg:block text-left pr-2">
-              <div className="text-xs font-bold text-white">{user?.displayName || t('My Farm Account', 'मेरो फार्म खाता')}</div>
-              <div className="text-[10px] font-semibold text-[#B4B394] flex items-center gap-1">
-                <Icon name="checkCircle" size={10} /> {t('Verified Farmer', 'प्रमाणित किसान')}
+            <div className="hidden sm:block text-left pr-1">
+              <div className="text-xs font-black text-slate-900 leading-tight">
+                {user?.displayName || (isNe ? 'ग्रीन होराइजन फार्म' : 'Green Horizon Farm')}
+              </div>
+              <div className="text-[10px] font-bold text-slate-400">
+                {isNe ? 'प्रमाणित फार्म' : 'Verified Farm'}
               </div>
             </div>
+            <span className="text-[10px] text-slate-400 pr-1">▼</span>
           </Link>
 
-          {/* Logout */}
+          {/* Logout if logged in */}
           {user && (
             <button
               onClick={onLogout}
-              className="p-2 text-white/80 bg-white/10 rounded-xl hover:bg-red-600 hover:text-white transition flex items-center gap-1.5 font-bold text-xs"
+              className="p-2 text-slate-500 bg-slate-50 rounded-full border border-slate-200 hover:bg-red-50 hover:text-red-600 transition flex items-center gap-1 font-bold text-xs"
               title={t('Sign Out', 'बाहिर निस्किनुहोस्')}
             >
-              <Icon name="logOut" size={18} />
-              <span className="hidden md:inline">{t('Logout', 'लगआउट')}</span>
+              <Icon name="logOut" size={16} />
             </button>
           )}
         </div>

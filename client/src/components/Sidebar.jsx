@@ -4,142 +4,104 @@ import Icon from './Icons';
 import { useLanguage } from '../context/LanguageContext';
 
 export const Sidebar = ({ user, isOpen, onClose }) => {
-  const { t } = useLanguage();
+  const { language, t } = useLanguage();
+  const isNe = language === 'ne';
   const isBuyer = user?.role === 'buyer';
 
-  const menuGroups = isBuyer
+  const menuItems = isBuyer
     ? [
-        {
-          title: t('💼 BUYER COMMAND CENTER', '💼 खरिदकर्ता केन्द्र'),
-          items: [
-            { path: '/buyer/dashboard', label: t('Buyer Dashboard', 'खरिदकर्ता ड्यासबोर्ड'), icon: 'trendingUp' },
-            { path: '/marketplace', label: t('Carbon Trade Market', 'कार्बन व्यापार बजार'), icon: 'dollarSign' },
-            { path: '/supplychain', label: t('Logistics & QR Tracker', 'लजिस्टिक्स र QR ट्र्याकर'), icon: 'truck' },
-          ],
-        },
-        {
-          title: t('👤 ACCOUNT & INFO', '👤 खाता र जानकारी'),
-          items: [
-            { path: '/about', label: t('About EcoTrace', 'इकोट्रेसको बारेमा'), icon: 'globe' },
-            { path: '/profile', label: t('My Profile', 'मेरो प्रोफाइल'), icon: 'user' },
-            { path: '/settings', label: t('Settings', 'सेटिङहरू'), icon: 'settings' },
-          ],
-        },
+        { path: '/buyer/dashboard', en: 'Buyer Dashboard', ne: 'खरिदकर्ता ड्यासबोर्ड', icon: 'trendingUp' },
+        { path: '/marketplace', en: 'Carbon Trade Market', ne: 'कार्बन व्यापार बजार', icon: 'dollarSign' },
+        { path: '/supplychain', en: 'Logistics & QR Tracker', ne: 'लजिस्टिक्स र QR ट्र्याकर', icon: 'truck' },
+        { path: '/about', en: 'About EcoTrace', ne: 'इकोट्रेसको बारेमा', icon: 'globe' },
+        { path: '/profile', en: 'My Profile', ne: 'मेरो प्रोफाइल', icon: 'user' },
+        { path: '/settings', en: 'Settings', ne: 'सेटिङहरू', icon: 'settings' },
       ]
     : [
-        {
-          title: t('🌾 FARMER COMMAND CENTER', '🌾 कृषक केन्द्र'),
-          items: [
-            { path: '/dashboard', label: t('Dashboard', 'ड्यासबोर्ड'), icon: 'activity' },
-            { path: '/assistant', label: t('AI Farm Assistant', 'एआई कृषि सहायक'), icon: 'user' },
-            { path: '/farms/register', label: t('Add New Field', 'नयाँ जग्गा थप्नुहोस्'), icon: 'plus' },
-            { path: '/farms/f-101', label: t('Field Details & Crops', 'बाली र जग्गा विवरण'), icon: 'sprout' },
-          ],
-        },
-        {
-          title: t('💚 HEALTH & MARKET', '💚 स्वास्थ्य र बजार'),
-          items: [
-            { path: '/sustainability', label: t('Sustainability Calculator', 'दीगोपन क्याल्कुलेटर'), icon: 'leaf' },
-            { path: '/rewards', label: t('Sustainability Rewards', 'दिगोपन पुरस्कार'), icon: 'award' },
-            { path: '/carbon', label: t('Carbon Earnings', 'कार्बन आम्दानी'), icon: 'award' },
-            { path: '/list-product', label: t('Sell / List Product', 'उत्पादन बिक्री सूची'), icon: 'plus' },
-            { path: '/marketplace', label: t('Carbon Trade Market', 'कार्बन व्यापार बजार'), icon: 'dollarSign' },
-          ],
-        },
-        {
-          title: t('🛡️ RISK & LOGISTICS', '🛡️ जोखिम र लजिस्टिक्स'),
-          items: [
-            { path: '/insurance', label: t('Crop Insurance', 'बाली बीमा सल्लाहकार'), icon: 'shield' },
-            { path: '/disasters', label: t('Weather Alerts', 'मौसम चेतावनी'), icon: 'alertTriangle' },
-            { path: '/supplychain', label: t('Delivery & QR Tracker', 'डेलिभरी र QR ट्र्याकर'), icon: 'truck' },
-          ],
-        },
-        {
-          title: t('👤 ACCOUNT & INFO', '👤 खाता र जानकारी'),
-          items: [
-            { path: '/about', label: t('About EcoTrace', 'इकोट्रेसको बारेमा'), icon: 'globe' },
-            { path: '/profile', label: t('My Profile', 'मेरो प्रोफाइल'), icon: 'user' },
-            { path: '/settings', label: t('Settings', 'सेटिङहरू'), icon: 'settings' },
-          ],
-        },
+        { path: '/dashboard', en: 'Dashboard', ne: 'ड्यासबोर्ड', icon: 'activity' },
+        { path: '/assistant', en: 'AI Farm Assistant', ne: 'एआई फार्म सहायक', icon: 'user' },
+        { path: '/farms/f-101', en: 'Fields & Crops', ne: 'खेतबारी र बाली', icon: 'sprout' },
+        { path: '/sustainability', en: 'Sustainability', ne: 'दिगोपन', icon: 'leaf' },
+        { path: '/carbon', en: 'Carbon Earnings', ne: 'कार्बन आम्दानी', icon: 'award' },
+        { path: '/list-product', en: 'Sell / List Product', ne: 'उत्पादन बेच्नुहोस्', icon: 'plus' },
+        { path: '/rewards', en: 'Rewards & Points', ne: 'पुरस्कार र अंक', icon: 'award' },
+        { path: '/insurance', en: 'Crop Insurance', ne: 'बाली बीमा', icon: 'shield' },
+        { path: '/disasters', en: 'Weather Alerts', ne: 'मौसम सूचना', icon: 'alertTriangle' },
+        { path: '/supplychain', en: 'Delivery & QR Tracker', ne: 'डेलिभरी र ट्र्याकर', icon: 'truck' },
+        { path: '/reports', en: 'Reports & Analytics', ne: 'रिपोर्ट र विश्लेषण', icon: 'globe' },
+        { path: '/settings', en: 'Settings', ne: 'सेटिङहरू', icon: 'settings' },
       ];
 
   return (
     <>
+      {/* Mobile Overlay */}
       {isOpen && (
         <div
           onClick={onClose}
-          className="fixed inset-0 z-40 bg-[#17251D]/50 backdrop-blur-xs lg:hidden"
+          className="fixed inset-0 z-40 bg-slate-900/60 backdrop-blur-xs lg:hidden"
         ></div>
       )}
 
       <aside
-        className={`fixed top-0 left-0 z-40 h-full w-64 bg-white border-r border-[#E5E8E3] pt-16 lg:pt-0 transform transition-transform duration-200 ease-in-out lg:static lg:translate-x-0 ${
+        className={`fixed top-0 left-0 z-40 h-full w-64 bg-[#013822] text-white border-r border-[#00573A]/40 transform transition-transform duration-200 ease-in-out lg:static lg:translate-x-0 flex flex-col justify-between shadow-xl ${
           isOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
-        <div className="h-full flex flex-col justify-between overflow-y-auto px-4 py-6">
-          <div className="space-y-6">
-            {menuGroups.map((group, idx) => (
-              <div key={idx}>
-                <div className="px-3 mb-2 text-[11px] font-extrabold tracking-wider text-[#7B8428] uppercase">
-                  {group.title}
-                </div>
-                <nav className="space-y-1">
-                  {group.items.map((item) => (
-                    <NavLink
-                      key={item.path}
-                      to={item.path}
-                      onClick={onClose}
-                      className={({ isActive }) =>
-                        `flex items-center gap-3 px-3.5 py-2.5 text-sm font-bold rounded-xl transition ${
-                          isActive
-                            ? 'bg-[#174F32] text-white shadow-xs'
-                            : 'text-[#17251D] hover:bg-[#F8F7F1] hover:text-[#063822]'
-                        }`
-                      }
-                    >
-                      <Icon name={item.icon} size={20} />
-                      <span>{item.label}</span>
-                    </NavLink>
-                  ))}
-                </nav>
-              </div>
-            ))}
-          </div>
+        {/* Logo fills sidebar width tightly */}
+        <div className="bg-white shrink-0 border-b border-slate-200">
+          <NavLink to="/dashboard" onClick={onClose} className="block w-full">
+            <img
+              src="/krishi-logo.png"
+              alt="Krishi Saarathi - कृषि सारथी"
+              className="w-full h-auto object-contain block"
+            />
+          </NavLink>
+        </div>
 
-          {/* Bottom promo card */}
-          {!isBuyer ? (
-            <div className="p-4 rounded-2xl text-white shadow-md mt-6 border border-[#B4B394]/30" style={{ background: 'linear-gradient(135deg, #063822, #174F32)' }}>
-              <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#B4B394]">
-                <Icon name="sprout" size={18} /> {t('Level 4 Farmer', 'तह ४ कृषक')}
-              </div>
-              <p className="text-xs mt-1.5 text-white/90 leading-relaxed font-medium">
-                {t('Your fields scored', 'तपाईंको खेतको प्राप्ताङ्क')} <strong className="text-[#D99A17] font-extrabold">92/100</strong> {t('this season!', 'यस सिजनमा!')}
-              </p>
+        {/* Navigation List - Strictly English when in EN mode, Strictly Nepali when in NE mode */}
+        <div className="flex-1 overflow-y-auto px-3.5 py-4 space-y-1">
+          <nav className="space-y-1.5">
+            {menuItems.map((item) => (
               <NavLink
-                to="/rewards"
-                className="mt-3 block text-center py-2 px-3 bg-[#F8F7F1] text-[#063822] text-xs font-extrabold rounded-xl shadow-xs hover:bg-white transition border border-[#B4B394]"
+                key={item.path}
+                to={item.path}
+                onClick={onClose}
+                className={({ isActive }) =>
+                  `flex items-center gap-3 px-3.5 py-3 rounded-xl transition-all ${
+                    isActive
+                      ? 'bg-white text-[#013822] shadow-md font-extrabold ring-1 ring-white/20'
+                      : 'text-white/85 hover:bg-white/10 hover:text-white font-bold'
+                  }`
+                }
               >
-                🎁 {t('Claim Eco Bonus', 'इको बोनस लिनुहोस्')}
+                {({ isActive }) => (
+                  <>
+                    <Icon name={item.icon} size={20} className={isActive ? 'text-[#013822]' : 'text-white/90'} />
+                    <span className="text-xs font-black tracking-tight">
+                      {isNe ? item.ne : item.en}
+                    </span>
+                  </>
+                )}
               </NavLink>
+            ))}
+          </nav>
+        </div>
+
+        {/* Bottom Help & Support Box - Dynamic Single Language */}
+        <div className="p-3.5 shrink-0 bg-[#01301e] border-t border-white/10">
+          <div className="p-3.5 rounded-2xl bg-[#F8F7F1] text-[#013822] border border-[#B4B394]/40 shadow-xs flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-[#013822]/10 text-[#013822] flex items-center justify-center text-xl shrink-0 font-bold">
+              🎧
             </div>
-          ) : (
-            <div className="p-4 rounded-2xl text-white shadow-md mt-6 border border-[#B4B394]/30" style={{ background: 'linear-gradient(135deg, #063822, #7B8428)' }}>
-              <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#B4B394]">
-                <Icon name="award" size={18} /> {t('Premium Partner', 'प्रिमियम पार्टनर')}
+            <div>
+              <div className="text-xs font-black text-[#013822] leading-tight">
+                {t('Need Help?', 'सहायता चाहिन्छ?')}
               </div>
-              <p className="text-xs mt-1.5 text-white/90 leading-relaxed font-medium">
-                {t('You offset', 'तपाईंले')} <strong className="text-[#D99A17] font-extrabold">840 kg CO₂</strong> {t('this quarter!', 'यस त्रैमासिकमा!')}
-              </p>
-              <NavLink
-                to="/marketplace"
-                className="mt-3 block text-center py-2 px-3 bg-[#F8F7F1] text-[#063822] text-xs font-extrabold rounded-xl shadow-xs hover:bg-white transition border border-[#B4B394]"
-              >
-                🌱 {t('Sourced Batches', 'स्रोतीकृत ब्याचहरू')}
-              </NavLink>
+              <div className="text-[10px] text-slate-600 font-bold mt-0.5">
+                {t('Contact Support', 'सम्पर्क समर्थन')}
+              </div>
             </div>
-          )}
+          </div>
         </div>
       </aside>
     </>
