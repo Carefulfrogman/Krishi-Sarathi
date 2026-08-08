@@ -177,3 +177,33 @@ h1, h2, h3, h4, h5, h6 {
 ::-webkit-scrollbar-thumb:hover {
   background: var(--sage-green);
 }
+
+/* AI Chat Formatted Content Styling */
+.ai-formatted-content {
+  overflow-wrap: break-word;
+  word-break: break-word;
+  max-width: 100%;
+}
+.ai-formatted-content h4 {
+  margin-top: 0.5rem;
+  margin-bottom: 0.5rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+  line-height: 1.4;
+}
+.ai-formatted-content p {
+  margin-bottom: 0.5rem;
+  line-height: 1.6;
+}
+.ai-formatted-content ul, .ai-formatted-content ol {
+  margin-top: 0.25rem;
+  margin-bottom: 0.5rem;
+  padding-left: 1.25rem;
+}
+.ai-formatted-content li {
+  margin-bottom: 0.25rem;
+  line-height: 1.5;
+}
+.ai-formatted-content b, .ai-formatted-content strong {
+  font-weight: 700;
+}

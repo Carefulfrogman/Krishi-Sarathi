@@ -50,29 +50,54 @@ const localizations = {
   }
 };
 
+const getWelcomeMessage = (language) => ({
+  id: 1,
+  sender: 'ai',
+  text: language === 'en'
+    ? `<h4 class='font-bold text-emerald-800 flex items-center gap-2 mb-2 text-base'>&#x1F44B; Hello! I am your EcoTrace Farm AI.</h4>
+<p class='mb-3 text-slate-700 leading-relaxed text-sm'>I am your agricultural assistant — I can help with crop health, disease diagnosis, soil fertility, irrigation, carbon credits, and sustainable farming practices.</p>
+<p class='mb-2 font-bold text-slate-800 text-sm'>How you can interact with me:</p>
+<ul class='list-disc pl-5 space-y-1.5 mb-3 text-slate-700 text-sm'>
+  <li><b>📸 Crop Leaf Photo:</b> Upload an image of an affected leaf/plant part for symptom analysis.</li>
+  <li><b>📄 Soil &amp; PDF Reports:</b> Upload soil test documents to get organic soil health advice.</li>
+  <li><b>🎵 Voice Notes:</b> Record an audio question in English or Nepali.</li>
+  <li><b>🌾 Direct Questions:</b> Ask any query about crop diseases, fertilizers, or carbon credits.</li>
+</ul>`
+    : `<h4 class='font-bold text-emerald-800 flex items-center gap-2 mb-2 text-base'>&#x1F44B; नमस्ते! म EcoTrace Farm AI हुँ।</h4>
+<p class='mb-3 text-slate-700 leading-relaxed text-sm'>म तपाईंको कृषि सहायक हुँ — बाली रोग, माटो, सिँचाइ, मल र दिगो खेती सम्बन्धी प्रश्नहरूमा सहयोग गर्न सक्छु।</p>
+<p class='mb-2 font-bold text-slate-800 text-sm'>तपाईंले मलाई कसरी प्रश्न सोध्न सक्नुहुन्छ:</p>
+<ul class='list-disc pl-5 space-y-1.5 mb-3 text-slate-700 text-sm'>
+  <li><b>📸 बाली पातको तस्बिर:</b> रोग पहिचानका लागि प्रभावित भागको तस्बिर पठाउनुहोस्।</li>
+  <li><b>📄 माटो परीक्षण PDF:</b> माटो परीक्षण रिपोर्ट अपलोड गरी सुझाव लिनुहोस्।</li>
+  <li><b>🎵 आवाज रेकर्ड:</b> नेपाली वा अंग्रेजीमा बोलेर प्रश्न सोध्नुहोस्।</li>
+  <li><b>🌾 प्रत्यक्ष प्रश्न:</b> बालीनाली वा कार्बन क्रेडिट सम्बन्धी जुनसुकै प्रश्न टाइप गर्नुहोस्।</li>
+</ul>`,
+  references: ['EcoTrace Farm AI Core Assistant', 'NARC Guidelines'],
+  followups: language === 'en'
+    ? ['What are common crop diseases in Nepal?', 'How do I improve soil health?', 'What is carbon farming?']
+    : ['धानमा लाग्ने मुख्य रोगहरू के हुन्?', 'माटो परीक्षण किन गर्नुपर्छ?', 'कार्बन क्रेडिट के हो?']
+});
+
 export const AiAssistant = () => {
   const [lang, setLang] = useState('en');
   const t = localizations[lang];
 
-  const [messages, setMessages] = useState([
-    {
-      id: 1,
-      sender: 'ai',
-      text: lang === 'en' 
-        ? 'Hello! I am your AI Krishi Assistant. You can upload photos of crop leaves, soil PDF documents, audio voice notes, or ask me any agricultural question.' 
-        : 'नमस्ते! म तपाईंको एआई कृषि सहायक हुँ। तपाईं बालीका पातका तस्बिर, माटो परीक्षण रिपोर्ट PDF, आवाज रेकर्ड, वा खेती सम्बन्धी जुनसुकै प्रश्नहरू सोध्न सक्नुहुन्छ।',
-      confidence: 100,
-      references: ['Krishi Saarathi Agriculture Core V2', 'NARC Research Guidelines'],
-      followups: lang === 'en' 
-        ? ['How do I improve my soil carbon score?', 'What are the current climate alerts in Chitwan?'] 
-        : ['माटोको कार्बन कसरी बढाउने?', 'चितवनमा अहिलेको मौसम कस्तो छ?']
-    }
-  ]);
+  const [messages, setMessages] = useState([getWelcomeMessage('en')]);
+
+  useEffect(() => {
+    setMessages((prev) => {
+      if (prev.length === 1 && prev[0].id === 1) {
+        return [getWelcomeMessage(lang)];
+      }
+      return prev;
+    });
+  }, [lang]);
 
   const [inputText, setInputText] = useState('');
   const [isRecording, setIsRecording] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
   const [attachedFile, setAttachedFile] = useState(null);
+
   
   const chatEndRef = useRef(null);
   const recognitionRef = useRef(null);
@@ -320,7 +345,7 @@ export const AiAssistant = () => {
               >
                 {/* Message Bubble - Wider & More Readable */}
                 <div
-                  className={`max-w-3xl sm:max-w-4xl p-5 sm:p-6 rounded-3xl text-sm sm:text-base leading-relaxed ${
+                  className={`w-full max-w-3xl sm:max-w-4xl p-5 sm:p-6 rounded-3xl text-sm sm:text-base leading-relaxed break-words overflow-hidden ${
                     msg.sender === 'user'
                       ? 'bg-emerald-600 text-white font-medium rounded-tr-none shadow-md'
                       : 'bg-slate-50 text-slate-800 border border-slate-100 rounded-tl-none shadow-xs'
@@ -350,13 +375,7 @@ export const AiAssistant = () => {
                     msg.text
                   )}
 
-                  {/* Confidence rating for AI replies */}
-                  {msg.sender === 'ai' && msg.confidence > 0 && (
-                    <div className="mt-4 pt-3 border-t border-slate-200/60 flex items-center justify-between text-xs text-slate-400 font-bold uppercase tracking-wider">
-                      <span>{t.confidence}</span>
-                      <span className="text-emerald-700 font-black">{msg.confidence}%</span>
-                    </div>
-                  )}
+
                 </div>
 
                 {/* References and Suggested Follow-ups for AI messages */}

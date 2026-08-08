@@ -62,9 +62,9 @@ export const Home = () => {
             <Link to="/about" className="text-sm font-semibold text-mountain-gray hover:text-primary-green transition-colors">Our Story</Link>
             <Link to="/dashboard" className="text-sm font-semibold text-mountain-gray hover:text-primary-green transition-colors">Solutions</Link>
             <Link to="/farm-marketplace" className="text-sm font-semibold text-mountain-gray hover:text-primary-green transition-colors">Marketplace</Link>
-            <Link to="/qr" className="text-sm font-semibold text-mountain-gray hover:text-primary-green transition-colors">Resources</Link>
             <a href="mailto:contact@krishisaarathi.com" className="text-sm font-semibold text-mountain-gray hover:text-primary-green transition-colors">Contact</a>
           </nav>
+
 
           {/* Right Actions */}
           <div className="flex items-center gap-4">
