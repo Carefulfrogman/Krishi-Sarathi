@@ -40,6 +40,7 @@ export const Sidebar = ({ user, isOpen, onClose }) => {
           title: t('💚 HEALTH & MARKET', '💚 स्वास्थ्य र बजार'),
           items: [
             { path: '/sustainability', label: t('Sustainability Calculator', 'दीगोपन क्याल्कुलेटर'), icon: 'leaf' },
+            { path: '/rewards', label: t('Sustainability Rewards', 'दिगोपन पुरस्कार'), icon: 'award' },
             { path: '/carbon', label: t('Carbon Earnings', 'कार्बन आम्दानी'), icon: 'award' },
             { path: '/list-product', label: t('Sell / List Product', 'उत्पादन बिक्री सूची'), icon: 'plus' },
             { path: '/marketplace', label: t('Carbon Trade Market', 'कार्बन व्यापार बजार'), icon: 'dollarSign' },

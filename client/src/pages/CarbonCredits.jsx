@@ -157,9 +157,18 @@ export const CarbonCredits = () => {
 
       {/* ── SECTION 2: Government Verification & Registration Form ── */}
       <div className="eco-card border-emerald-300 bg-gradient-to-br from-white to-emerald-50/30">
-        <div className="flex items-start gap-3 mb-4">
-          <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold shrink-0 mt-0.5">
-            <span className="text-xl">🏛️</span>
+        <div className="flex items-start gap-4 mb-4">
+          {/* Official Nepal Government Emblem */}
+          <div className="w-16 h-16 rounded-2xl bg-white border border-emerald-200 p-1 flex items-center justify-center shrink-0 shadow-xs">
+            <img
+              src="/nepal-gov-emblem.png"
+              alt="Government of Nepal Emblem"
+              className="w-full h-full object-contain"
+              onError={(e) => {
+                e.target.onerror = null;
+                e.target.parentElement.innerHTML = '<span class="text-2xl">🏛️</span>';
+              }}
+            />
           </div>
           <div>
             <span className="eco-badge eco-badge-success text-[9px] mb-1">Official Registry Integration</span>
@@ -178,11 +187,18 @@ export const CarbonCredits = () => {
         {/* Existing Government Submission Status Banner if submitted */}
         {govtSubmission ? (
           <div className="rounded-2xl border border-emerald-300 bg-emerald-50 p-5 space-y-3">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-emerald-200 pb-3">
-              <div className="flex items-center gap-2">
-                <span className="text-xl">✅</span>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-emerald-200 pb-3">
+              <div className="flex items-center gap-3">
+                <img
+                  src="/nepal-gov-emblem.png"
+                  alt="Nepal Government Logo"
+                  className="w-10 h-10 object-contain shrink-0"
+                  onError={(e) => { e.target.style.display = 'none'; }}
+                />
                 <div>
-                  <div className="text-xs font-extrabold text-emerald-900 uppercase">Government Submission Status</div>
+                  <div className="text-xs font-extrabold text-emerald-900 uppercase flex items-center gap-1.5">
+                    <span>✅</span> Government Submission Status
+                  </div>
                   <div className="text-sm font-black text-emerald-800">{govtSubmission.status}</div>
                 </div>
               </div>
