@@ -1,27 +1,20 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import Icon from '../components/Icons';
 
-// Sub-component for SVG Gauge Chart
-const GaugeChart = ({ value, label, color = "text-emerald-500", strokeColor = "stroke-emerald-500", size = 110 }) => {
+// SVG Gauge Chart Component for Impact Scores
+const GaugeChart = ({ value, label, labelNe, strokeColor = "stroke-emerald-500", size = 110 }) => {
   const radius = 35;
   const strokeWidth = 8;
   const circumference = 2 * Math.PI * radius;
-  // Limit value to range 0-100
   const normalizedValue = Math.min(Math.max(value, 0), 100);
   const strokeDashoffset = circumference - (normalizedValue / 100) * circumference;
 
   return (
-    <div className="flex flex-col items-center justify-center p-4 bg-white/80 backdrop-blur-md rounded-2xl border border-slate-100/80 shadow-sm transition hover:shadow-md">
+    <div className="flex flex-col items-center justify-center p-4 bg-white/90 backdrop-blur-md rounded-2xl border border-slate-200/80 shadow-xs transition hover:shadow-md">
       <div className="relative" style={{ width: size, height: size }}>
         <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
-          <circle
-            cx="50"
-            cy="50"
-            r={radius}
-            className="stroke-slate-100"
-            strokeWidth={strokeWidth}
-            fill="transparent"
-          />
+          <circle cx="50" cy="50" r={radius} className="stroke-slate-100" strokeWidth={strokeWidth} fill="transparent" />
           <circle
             cx="50"
             cy="50"
@@ -38,932 +31,1000 @@ const GaugeChart = ({ value, label, color = "text-emerald-500", strokeColor = "s
           <span className="text-xl font-black text-slate-800">{normalizedValue}%</span>
         </div>
       </div>
-      <span className="text-xs font-bold text-slate-500 mt-2 text-center uppercase tracking-wider">{label}</span>
+      <span className="text-xs font-extrabold text-slate-700 mt-2 text-center uppercase tracking-wider">{label}</span>
+      <span className="text-[11px] font-bold text-emerald-700 text-center">{labelNe}</span>
     </div>
   );
 };
 
 export const SustainabilityScore = () => {
-  // Page Flow Stages: 'upload' | 'analyzing' | 'questions' | 'results'
-  const [stage, setStage] = useState('upload');
-  
-  // Media State
-  const [mediaFile, setMediaFile] = useState(null);
-  const [mediaType, setMediaType] = useState('video'); // 'image' | 'video'
-  const [isDragOver, setIsDragOver] = useState(false);
+  // Wizard Steps: 1: Metadata, 2: Crops, 3: Soil & Fertilizer, 4: Irrigation & Energy, 5: Tillage & Forestry, 6: Livestock (if mixed/livestock), 7: Evidence, 8: Review, 9: Results
+  const [currentStep, setCurrentStep] = useState(1);
 
-  // AI Scan simulation details
-  const [scanProgress, setScanProgress] = useState(0);
-  const [scanMetric, setScanMetric] = useState('');
-  const [detectedMetrics, setDetectedMetrics] = useState({
-    vegetation: null,
-    cropHealth: null,
-    bareSoil: null,
-    trees: null,
-    irrigation: null
+  // Form State
+  const [formData, setFormData] = useState({
+    // Step 1: Farm Metadata
+    farmName: 'Koshi Krishi Farm',
+    farmArea: '2.5',
+    areaUnit: 'ha', // 'ha' | 'bigha' | 'ropani'
+    location: 'Sunsari, Koshi Province',
+    farmType: 'mixed', // 'crop' | 'mixed' | 'livestock' | 'agroforestry'
+
+    // Step 2: Crops List
+    crops: [
+      { id: 1, name: 'Basmati Rice (धान)', area: '1.5', yield: '4500' },
+      { id: 2, name: 'Maize (मकै)', area: '1.0', yield: '3200' },
+    ],
+
+    // Step 3: Soil & Fertilizer
+    compostKg: '1500',
+    chemicalKg: '100',
+    biocharKg: '250',
+    coverCrop: 'yes', // 'yes' | 'no' | 'seasonal'
+
+    // Step 4: Irrigation & Energy
+    irrigation: 'solar', // 'rainfed' | 'drip' | 'solar' | 'grid' | 'diesel'
+    dieselLiters: '20',
+    electricityKwh: '50',
+
+    // Step 5: Tillage & Residue & Trees
+    tillage: 'zero', // 'zero' | 'reduced' | 'conventional'
+    residue: 'incorporate', // 'incorporate' | 'mulch' | 'feed' | 'burn'
+    treesCount: '45',
+    treeType: 'Fruit & Fodder (फलफूल तथा घाँस)',
+
+    // Step 6: Livestock (for mixed or livestock farm type)
+    livestock: [
+      { id: 1, type: 'Cattle / Buffalo (गाई/भैंसी)', count: '4' },
+      { id: 2, type: 'Goats (बाख्रा)', count: '8' },
+    ],
+    manureMgmt: 'biogas', // 'biogas' | 'compost' | 'dried' | 'discharge'
+
+    // Step 7: Evidence Files
+    soilReportFile: null,
+    farmPhotoFile: null,
   });
 
-  // Questions State
-  const [answers, setAnswers] = useState({
-    // Essential questions (used if media uploaded)
-    cropType: 'Basmati Rice',
-    fertilizerSource: 'fully-organic',
+  // Results State
+  const [results, setResults] = useState(null);
 
-    // Comprehensive questions (used if no media uploaded)
-    vegVariety: 'polyculture',
-    pestStrategy: 'ipm',
-    soilTillage: 'cover-zero',
-    agroforestry: 'extensive',
-    irrigationSource: 'solar-drip',
-    chemicalFertilizer: 'organic-only'
-  });
+  // Handlers for dynamic lists
+  const addCrop = () => {
+    setFormData((prev) => ({
+      ...prev,
+      crops: [...prev.crops, { id: Date.now(), name: 'Wheat (गहुँ)', area: '0.5', yield: '1500' }],
+    }));
+  };
 
-  // Generated results
-  const [scores, setScores] = useState({
-    trustScore: 0,
-    soilScore: 0,
-    waterScore: 0,
-    fertilizerScore: 0,
-    carbonScore: 0,
-    confidenceScore: 0
-  });
-  const [recommendations, setRecommendations] = useState([]);
+  const removeCrop = (id) => {
+    setFormData((prev) => ({
+      ...prev,
+      crops: prev.crops.filter((c) => c.id !== id),
+    }));
+  };
 
-  // Handle Drag Events
-  const handleDrag = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (e.type === "dragenter" || e.type === "dragover") {
-      setIsDragOver(true);
-    } else if (e.type === "dragleave") {
-      setIsDragOver(false);
+  const updateCrop = (id, field, value) => {
+    setFormData((prev) => ({
+      ...prev,
+      crops: prev.crops.map((c) => (c.id === id ? { ...c, [field]: value } : c)),
+    }));
+  };
+
+  const addAnimal = () => {
+    setFormData((prev) => ({
+      ...prev,
+      livestock: [...prev.livestock, { id: Date.now(), type: 'Poultry (कुखुरा)', count: '25' }],
+    }));
+  };
+
+  const removeAnimal = (id) => {
+    setFormData((prev) => ({
+      ...prev,
+      livestock: prev.livestock.filter((a) => a.id !== id),
+    }));
+  };
+
+  const updateAnimal = (id, field, value) => {
+    setFormData((prev) => ({
+      ...prev,
+      livestock: prev.livestock.map((a) => (a.id === id ? { ...a, [field]: value } : a)),
+    }));
+  };
+
+  // Convert unit to Hectares for calculations
+  const getAreaHectares = () => {
+    const val = parseFloat(formData.farmArea) || 1;
+    if (formData.areaUnit === 'bigha') return val * 0.677;
+    if (formData.areaUnit === 'ropani') return val * 0.0509;
+    return val;
+  };
+
+  // Separate Calculation Logic
+  const calculateScoresAndCarbon = () => {
+    const ha = Math.max(getAreaHectares(), 0.5);
+
+    // 1. SUSTAINABILITY SUB-SCORES (0-100)
+    let soil = 60;
+    let water = 60;
+    let fertilizer = 60;
+    let biodiversity = 60;
+
+    // Tillage
+    if (formData.tillage === 'zero') soil += 25;
+    else if (formData.tillage === 'reduced') soil += 15;
+    else soil -= 10;
+
+    // Residue
+    if (formData.residue === 'incorporate') soil += 12;
+    else if (formData.residue === 'mulch') soil += 15;
+    else if (formData.residue === 'burn') soil -= 25;
+
+    // Organic compost vs Chemical
+    const compostKg = parseFloat(formData.compostKg) || 0;
+    const chemicalKg = parseFloat(formData.chemicalKg) || 0;
+    const biocharKg = parseFloat(formData.biocharKg) || 0;
+
+    if (compostKg > 0) soil += Math.min(15, compostKg / (ha * 100));
+    if (biocharKg > 0) soil += Math.min(10, biocharKg / (ha * 50));
+
+    if (chemicalKg === 0) fertilizer = 95;
+    else if (chemicalKg / ha < 100) fertilizer = 80;
+    else if (chemicalKg / ha < 250) fertilizer = 60;
+    else fertilizer = 40;
+
+    // Cover crop
+    if (formData.coverCrop === 'yes') { soil += 10; biodiversity += 10; }
+    else if (formData.coverCrop === 'seasonal') { soil += 5; biodiversity += 5; }
+
+    // Irrigation
+    if (formData.irrigation === 'drip') water = 95;
+    else if (formData.irrigation === 'solar') water = 90;
+    else if (formData.irrigation === 'rainfed') water = 82;
+    else if (formData.irrigation === 'grid') water = 70;
+    else water = 45;
+
+    // Trees
+    const trees = parseInt(formData.treesCount) || 0;
+    if (trees > 50) biodiversity += 25;
+    else if (trees > 15) biodiversity += 15;
+    else if (trees > 0) biodiversity += 8;
+
+    // Crops diversity
+    if (formData.crops.length >= 3) biodiversity += 15;
+    else if (formData.crops.length >= 2) biodiversity += 8;
+
+    const finalSoil = Math.min(100, Math.max(15, soil));
+    const finalWater = Math.min(100, Math.max(15, water));
+    const finalFertilizer = Math.min(100, Math.max(15, fertilizer));
+    const finalBiodiversity = Math.min(100, Math.max(15, biodiversity));
+
+    const overallScore = Math.round(
+      finalSoil * 0.3 + finalWater * 0.25 + finalFertilizer * 0.25 + finalBiodiversity * 0.2
+    );
+
+    // 2. INDEPENDENT CARBON BENEFIT ESTIMATE (tCO₂e / year)
+    // NEVER derived directly from sustainability score!
+    let carbonTons = 0;
+
+    // Tillage sequestration (~1.2 tCO2e/ha/yr for zero till, ~0.6 for reduced till)
+    if (formData.tillage === 'zero') carbonTons += ha * 1.2;
+    else if (formData.tillage === 'reduced') carbonTons += ha * 0.6;
+
+    // Biochar Sequestration (~2.5 kg CO2e / kg biochar)
+    carbonTons += biocharKg * 0.0025;
+
+    // Compost (~0.3 kg CO2e / kg compost)
+    carbonTons += compostKg * 0.0003;
+
+    // Tree Sequestration (~0.022 tCO2e per tree / year)
+    carbonTons += trees * 0.022;
+
+    // Fuel Avoidance (Solar vs Diesel)
+    if (formData.irrigation === 'solar') {
+      const dieselSaved = parseFloat(formData.dieselLiters) || 30;
+      carbonTons += dieselSaved * 12 * 0.00268;
     }
-  };
 
-  const handleDrop = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragOver(false);
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      const file = e.dataTransfer.files[0];
-      setMediaFile(file);
-      setMediaType(file.type.startsWith('video/') ? 'video' : 'image');
+    // Methane reduction from Biogas digester
+    if ((formData.farmType === 'mixed' || formData.farmType === 'livestock') && formData.manureMgmt === 'biogas') {
+      const totalAnimals = formData.livestock.reduce((s, a) => s + (parseInt(a.count) || 0), 0);
+      carbonTons += totalAnimals * 0.35;
     }
-  };
 
-  const handleFileChange = (e) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      setMediaFile(file);
-      setMediaType(file.type.startsWith('video/') ? 'video' : 'image');
-    }
-  };
+    const estimatedCarbonBenefit = Math.max(0.1, Math.round(carbonTons * 100) / 100);
 
-  // Start AI Analysis Process
-  const startAnalysis = () => {
-    if (!mediaFile) return;
-    setStage('analyzing');
-    setScanProgress(0);
-  };
-
-  // Skip Media to Manual Flow
-  const skipToManual = () => {
-    setMediaFile(null);
-    setStage('questions');
-  };
-
-  // Simulate AI Scan
-  useEffect(() => {
-    if (stage !== 'analyzing') return;
-
-    const interval = setInterval(() => {
-      setScanProgress((prev) => {
-        const next = prev + 5;
-        if (next >= 100) {
-          clearInterval(interval);
-          // Set detected variables to high grades
-          setDetectedMetrics({
-            vegetation: 'High Density Polyculture (Dense Canopy)',
-            cropHealth: 'Excellent NDVI index (0.82)',
-            bareSoil: 'Low Exposure (< 15%) with crop cover',
-            trees: '24 trees detected / ha',
-            irrigation: 'Drip lines & solar-pumping detected'
-          });
-          setTimeout(() => {
-            setStage('questions');
-          }, 800);
-          return 100;
-        }
-        return next;
-      });
-    }, 150);
-
-    return () => clearInterval(interval);
-  }, [stage]);
-
-  // Set message based on progress
-  useEffect(() => {
-    if (scanProgress < 20) {
-      setScanMetric('Detecting canopy vegetation patterns...');
-    } else if (scanProgress < 40) {
-      setScanMetric('Analyzing crop health indices (NDVI mapping)...');
-    } else if (scanProgress < 60) {
-      setScanMetric('Scanning bare soil percentages...');
-    } else if (scanProgress < 80) {
-      setScanMetric('Counting agroforestry trees & tree lines...');
-    } else {
-      setScanMetric('Verifying irrigation channels & solar pump rigs...');
-    }
-  }, [scanProgress]);
-
-  // Compute final scores
-  const calculateFinalScores = () => {
-    let soil = 70;
-    let water = 70;
-    let fertilizer = 70;
-    let carbon = 70;
-    let confidence = 75; // Standard self-reported confidence
-
+    // Action recommendations
     const recs = [];
-
-    if (mediaFile) {
-      // AI Verification gives starting high scores + 95% high confidence
-      confidence = 95;
-      soil = 88;
-      water = 92;
-      fertilizer = 85;
-      carbon = 88;
-
-      // Adjust based on the 2 essential questions
-      if (answers.cropType === 'Basmati Rice') {
-        water -= 5; // rice needs water management
-        recs.push({
-          id: 'e-1',
-          title: 'AWD (Alternate Wetning and Drying) for Basmati',
-          text: 'Since you grow Basmati Rice, implementing AWD can save up to 30% water and reduce methane emissions.',
-          priority: 'High Priority',
-          color: 'teal'
-        });
-      } else if (answers.cropType === 'Mixed Vegetables') {
-        soil += 4;
-        carbon += 3;
-      }
-
-      if (answers.fertilizerSource === 'fully-organic') {
-        fertilizer = 98;
-        soil += 6;
-      } else if (answers.fertilizerSource === 'chemical-intensive') {
-        fertilizer = 40;
-        soil -= 15;
-        recs.push({
-          id: 'e-2',
-          title: 'Transition to Bio-composting',
-          text: 'Integrating vermicompost and legume cover crop rotations will build carbon stocks and reduce reliance on synthetic urea.',
-          priority: 'Critical Priority',
-          color: 'red'
-        });
-      } else {
-        fertilizer = 70;
-        soil += 2;
-        recs.push({
-          id: 'e-3',
-          title: 'Increase Organic Ratio',
-          text: 'Raise the percentage of organic amendments over chemical fertilizer to boost soil microbes.',
-          priority: 'Medium Priority',
-          color: 'emerald'
-        });
-      }
-    } else {
-      // Manual Questionnaire Calculations
-      // 1. Veg & Polyculture
-      if (answers.vegVariety === 'polyculture') {
-        soil += 8;
-        carbon += 10;
-      } else {
-        soil -= 10;
-        recs.push({
-          id: 'm-1',
-          title: 'Diversify Monoculture Fields',
-          text: 'Rotating main crops with mustard or lentils breaks pest cycles and naturally restores nitrogen.',
-          priority: 'High Priority',
-          color: 'teal'
-        });
-      }
-
-      // 2. Pest Strategy
-      if (answers.pestStrategy === 'ipm') {
-        fertilizer += 10;
-      } else {
-        fertilizer -= 12;
-        recs.push({
-          id: 'm-2',
-          title: 'Adopt Integrated Pest Management (IPM)',
-          text: 'Use pheromone traps, yellow sticky cards, and encourage beneficial predator insects before applying chemical sprays.',
-          priority: 'Medium Priority',
-          color: 'emerald'
-        });
-      }
-
-      // 3. Soil Tillage
-      if (answers.soilTillage === 'cover-zero') {
-        soil += 12;
-        carbon += 10;
-      } else {
-        soil -= 8;
-        carbon -= 6;
-        recs.push({
-          id: 'm-3',
-          title: 'Practice Reduced Tillage & Cover Cropping',
-          text: 'Frequent deep tilling exposes organic matter to oxygen, depleting carbon. Plant legume cover crops post-harvest.',
-          priority: 'High Priority',
-          color: 'teal'
-        });
-      }
-
-      // 4. Agroforestry
-      if (answers.agroforestry === 'extensive') {
-        carbon += 12;
-        soil += 5;
-      } else {
-        carbon -= 10;
-        recs.push({
-          id: 'm-4',
-          title: 'Plant Perimeter Agroforestry Trees',
-          text: 'Fringe boundary areas with native fodder or timber trees to increase carbon sequestration and form windbreaks.',
-          priority: 'Medium Priority',
-          color: 'emerald'
-        });
-      }
-
-      // 5. Water Source
-      if (answers.irrigationSource === 'solar-drip') {
-        water = 96;
-      } else if (answers.irrigationSource === 'rainwater') {
-        water = 82;
-      } else {
-        water = 45;
-        recs.push({
-          id: 'm-5',
-          title: 'Upgrade Flood Irrigation to Drip Kits',
-          text: 'Flood irrigation causes heavy soil nutrient runoff and water waste. Drip lines improve water efficiency by up to 60%.',
-          priority: 'Critical Priority',
-          color: 'red'
-        });
-      }
-
-      // 6. Fertilizer
-      if (answers.chemicalFertilizer === 'organic-only') {
-        fertilizer = 96;
-        soil += 5;
-      } else if (answers.chemicalFertilizer === 'mixed') {
-        fertilizer = 72;
-      } else {
-        fertilizer = 35;
-        soil -= 10;
-        recs.push({
-          id: 'm-6',
-          title: 'Stop Intensive Chemical Fertilizer',
-          text: 'Excessive chemical urea applications lead to soil acidification. Transition to locally made biochar & manure slurry.',
-          priority: 'Critical Priority',
-          color: 'red'
-        });
-      }
+    if (formData.tillage !== 'zero') {
+      recs.push({
+        title: 'Transition to Zero or Reduced Tillage (शून्य जोताई अपनाउनुहोस्)',
+        text: 'Practicing zero-tillage builds soil organic carbon and prevents erosion.',
+        badge: 'High Impact',
+        color: 'teal',
+      });
     }
-
-    // Bound scores between 10 and 100
-    const finalSoil = Math.min(Math.max(soil, 10), 100);
-    const finalWater = Math.min(Math.max(water, 10), 100);
-    const finalFertilizer = Math.min(Math.max(fertilizer, 10), 100);
-    const finalCarbon = Math.min(Math.max(carbon, 10), 100);
-
-    // Compute Overall Trust Score
-    const overallScore = Math.round((finalSoil * 0.3) + (finalWater * 0.25) + (finalFertilizer * 0.25) + (finalCarbon * 0.2));
-
+    if (chemicalKg > 100) {
+      recs.push({
+        title: 'Reduce Synthetic Urea & Increase Biochar (रासायनिक मल घटाउनुहोस्)',
+        text: 'Replace 30% of chemical fertilizer with vermicompost and biochar to lower soil acidity.',
+        badge: 'Soil Health',
+        color: 'amber',
+      });
+    }
+    if (formData.irrigation === 'diesel') {
+      recs.push({
+        title: 'Apply for Solar Pump Subsidy (सौर्य सिँचाइ अनुदान)',
+        text: 'Switching from diesel to solar pumps reduces operational fuel costs to zero.',
+        badge: 'Energy Savings',
+        color: 'emerald',
+      });
+    }
     if (recs.length === 0) {
       recs.push({
-        id: 'rec-success',
-        title: 'Maintain Stellar Green Practice standards',
-        text: 'Your current operations meet high sustainability targets. Document these practices to claim carbon premium rates.',
-        priority: 'Optimal Stand',
-        color: 'emerald'
+        title: 'Maintain Regenerative Agriculture Practices (दीगो खेती जारी राख्नुहोस्)',
+        text: 'Your field management scores high across soil, water, and biodiversity indices.',
+        badge: 'Optimal',
+        color: 'emerald',
       });
     }
 
-    setScores({
-      trustScore: overallScore,
+    setResults({
+      overallScore,
       soilScore: finalSoil,
       waterScore: finalWater,
       fertilizerScore: finalFertilizer,
-      carbonScore: finalCarbon,
-      confidenceScore: confidence
+      biodiversityScore: finalBiodiversity,
+      estimatedCarbonBenefit,
+      recommendations: recs,
     });
 
-    setRecommendations(recs);
-    setStage('results');
+    try {
+      localStorage.setItem('ecotrace_carbon_estimate', JSON.stringify({
+        farmName: formData.farmName,
+        location: formData.location,
+        farmArea: formData.farmArea,
+        areaUnit: formData.areaUnit,
+        estimatedCarbonBenefit,
+        calculatedAt: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+        cropsCount: formData.crops.length,
+        treesCount: formData.treesCount,
+        tillage: formData.tillage,
+        irrigation: formData.irrigation,
+      }));
+    } catch (err) {
+      console.error(err);
+    }
+
+    setCurrentStep(9);
+  };
+
+  const isLivestockRelevant = formData.farmType === 'mixed' || formData.farmType === 'livestock';
+  const totalSteps = isLivestockRelevant ? 8 : 7;
+
+  const goToNextStep = () => {
+    if (currentStep === 5 && !isLivestockRelevant) {
+      setCurrentStep(7);
+    } else if (currentStep === 8) {
+      calculateScoresAndCarbon();
+    } else {
+      setCurrentStep((prev) => prev + 1);
+    }
+  };
+
+  const goToPrevStep = () => {
+    if (currentStep === 7 && !isLivestockRelevant) {
+      setCurrentStep(5);
+    } else {
+      setCurrentStep((prev) => prev - 1);
+    }
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-8 space-y-8">
-      {/* Dhaka Style Border Header */}
-      <div className="p-8 bg-white rounded-3xl border border-slate-100 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6 relative overflow-hidden">
-        <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-red-600 via-blue-700 to-emerald-600"></div>
-        <div className="space-y-1 relative z-10">
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-800 text-[10px] font-bold border border-emerald-100 uppercase tracking-wider">
-            🌿 Sustainability Score Redesign
-          </span>
-          <h1 className="text-3xl font-black text-slate-900 tracking-tight">Krishi Saarathi Smart Assessment</h1>
-          <p className="text-sm text-slate-500 max-w-xl font-medium">
-            Generate your certified Trust Score & Environmental Grades using media AI Analysis or manual operational self-reporting.
+    <div className="max-w-5xl mx-auto px-4 py-6 space-y-6">
+      {/* ── Page Header ── */}
+      <div className="p-6 bg-white rounded-3xl border border-slate-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <span className="eco-badge eco-badge-success mb-2">🌿 Practical Assessment / व्यावहारिक मूल्यांकन</span>
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 mt-1">
+            Sustainability & Carbon Estimator
+          </h1>
+          <p className="text-xs text-slate-500 mt-1 font-medium">
+            Calculate your farm's <strong className="text-slate-700">Sustainability Score (0-100)</strong> and <strong className="text-emerald-700">Estimated Carbon Benefit (tCO₂e)</strong> in simple steps.
+          </p>
+          <p className="text-xs text-emerald-700 font-medium mt-0.5">
+            आफ्नो फारमको दिगोपन स्कोर र सम्भावित कार्बन लाभ सजिलै मापन गर्नुहोस्।
           </p>
         </div>
-        {stage === 'results' && (
-          <div className="px-6 py-4 bg-emerald-50 rounded-2xl border border-emerald-100 text-left md:text-right shrink-0">
-            <div className="text-[10px] text-emerald-800 font-extrabold uppercase tracking-wider">Trust Score Status</div>
-            <div className="text-2xl font-black text-emerald-700 mt-1">
-              {scores.trustScore >= 85 ? 'AAA ESG Tier' : scores.trustScore >= 70 ? 'AA Tier Premium' : 'A Class Standard'}
-            </div>
+        {currentStep === 9 && (
+          <div className="px-4 py-3 bg-emerald-50 rounded-2xl border border-emerald-200 text-right shrink-0">
+            <div className="text-[10px] text-emerald-800 font-bold uppercase tracking-wider">Overall Rating</div>
+            <div className="text-2xl font-black text-emerald-800">{results?.overallScore}/100</div>
           </div>
         )}
       </div>
 
-      {/* STAGE 1: UPLOAD AND ENTRY GATE */}
-      {stage === 'upload' && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-stretch">
-          {/* Left Panel: Media AI Upload */}
-          <div className="bg-gradient-to-br from-slate-900 via-slate-950 to-slate-900 text-white p-8 rounded-3xl border border-slate-800 shadow-xl flex flex-col justify-between space-y-6 relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl"></div>
-            
-            <div className="space-y-4 relative z-10">
-              <span className="inline-flex items-center px-2.5 py-0.5 rounded-md bg-emerald-500/10 text-emerald-400 text-[10px] font-bold border border-emerald-500/20 uppercase tracking-wider">
-                ⚡ Recommended Flow
-              </span>
-              <h2 className="text-2xl font-black text-white">Upload Farm Image or Video</h2>
-              <p className="text-xs text-slate-400 leading-relaxed">
-                Our computer vision models automatically detect vegetation cover, crop stress indices, bare soil boundaries, tree presence, and irrigation setups.
-              </p>
+      {/* ── Step Progress Indicator (Steps 1 to 8) ── */}
+      {currentStep < 9 && (
+        <div className="eco-card">
+          <div className="flex items-center justify-between text-xs font-bold text-slate-600 mb-2">
+            <span>Step {currentStep} of {totalSteps}: {
+              currentStep === 1 ? 'Farm Profile / फारम विवरण' :
+              currentStep === 2 ? 'Crops & Yield / बाली तथा उत्पादन' :
+              currentStep === 3 ? 'Soil & Fertilizer / माटो तथा मल' :
+              currentStep === 4 ? 'Irrigation & Fuel / सिँचाइ तथा ऊर्जा' :
+              currentStep === 5 ? 'Tillage & Trees / जोताई र रुखहरू' :
+              currentStep === 6 ? 'Livestock & Manure / पशुपालन र गोबर' :
+              currentStep === 7 ? 'Evidence Upload / प्रमाण पत्र' :
+              'Review & Submit / अन्तिम समीक्षा'
+            }</span>
+            <span className="text-emerald-700">{Math.round((currentStep / totalSteps) * 100)}% Completed</span>
+          </div>
+          <div className="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden">
+            <div
+              className="h-full bg-gradient-to-r from-emerald-500 to-teal-600 transition-all duration-300"
+              style={{ width: `${(currentStep / totalSteps) * 100}%` }}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* ── STEP 1: Farm Metadata ── */}
+      {currentStep === 1 && (
+        <div className="eco-card space-y-5 animate-fade-in">
+          <div className="border-b border-slate-100 pb-3">
+            <h2 className="text-lg font-extrabold text-slate-800">1. Farm Profile & Location</h2>
+            <p className="text-xs text-slate-500">फारमको नाम, क्षेत्रफल र स्थान / Basic farm information</p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Farm Name / फारमको नाम</label>
+              <input
+                type="text"
+                value={formData.farmName}
+                onChange={(e) => setFormData({ ...formData, farmName: e.target.value })}
+                className="w-full px-3 py-2.5 text-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-400 focus:outline-none"
+              />
             </div>
 
-            {/* Drop Zone */}
-            <div
-              onDragEnter={handleDrag}
-              onDragOver={handleDrag}
-              onDragLeave={handleDrag}
-              onDrop={handleDrop}
-              className={`border-2 border-dashed rounded-2xl p-8 text-center transition relative flex flex-col items-center justify-center space-y-3 min-h-[220px] ${
-                isDragOver ? 'border-emerald-400 bg-slate-900' : 'border-slate-700 hover:border-emerald-500/80'
-              }`}
+            <div>
+              <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Location / स्थान (District/Palika)</label>
+              <input
+                type="text"
+                placeholder="e.g. Sunsari, Koshi Province"
+                value={formData.location}
+                onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                className="w-full px-3 py-2.5 text-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-400 focus:outline-none"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Total Farm Area / जम्मा क्षेत्रफल</label>
+              <div className="flex gap-2">
+                <input
+                  type="number"
+                  step="0.1"
+                  value={formData.farmArea}
+                  onChange={(e) => setFormData({ ...formData, farmArea: e.target.value })}
+                  className="w-full px-3 py-2.5 text-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-400 focus:outline-none font-bold"
+                />
+                <select
+                  value={formData.areaUnit}
+                  onChange={(e) => setFormData({ ...formData, areaUnit: e.target.value })}
+                  className="px-3 py-2.5 text-xs font-bold border border-slate-200 rounded-xl bg-slate-50"
+                >
+                  <option value="ha">Hectares (हेक्टर)</option>
+                  <option value="bigha">Bigha (बिघा)</option>
+                  <option value="ropani">Ropani (रोपनी)</option>
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Primary Farm Type / फारमको प्रकार</label>
+              <select
+                value={formData.farmType}
+                onChange={(e) => setFormData({ ...formData, farmType: e.target.value })}
+                className="w-full px-3 py-2.5 text-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-400 focus:outline-none bg-white font-medium"
+              >
+                <option value="crop">Crop Farming Only (बाली खेती मात्र)</option>
+                <option value="mixed">Mixed Crop & Livestock (मिश्रित खेती र पशुपालन)</option>
+                <option value="livestock">Livestock & Dairy Farming (पशुपालन तथा दुग्ध)</option>
+                <option value="agroforestry">Agroforestry & Orchards (कृषि वन तथा फलफूल)</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="pt-4 border-t border-slate-100 flex justify-end">
+            <button
+              onClick={goToNextStep}
+              className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl transition shadow-sm inline-flex items-center gap-1.5"
             >
+              Next Step: Crops →
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ── STEP 2: Crops List ── */}
+      {currentStep === 2 && (
+        <div className="eco-card space-y-5 animate-fade-in">
+          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+            <div>
+              <h2 className="text-lg font-extrabold text-slate-800">2. Crops & Harvest Yield</h2>
+              <p className="text-xs text-slate-500">बालीको नाम, क्षेत्र र अनुमानित उत्पादन / Add all active seasonal crops</p>
+            </div>
+            <button
+              onClick={addCrop}
+              className="px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-800 font-bold text-xs rounded-xl transition inline-flex items-center gap-1"
+            >
+              <Icon name="plus" size={14} /> Add Crop / + बाली थप्नुहोस्
+            </button>
+          </div>
+
+          <div className="space-y-3">
+            {formData.crops.map((crop, idx) => (
+              <div key={crop.id} className="p-4 rounded-xl border border-slate-200 bg-slate-50/50 flex flex-col sm:flex-row sm:items-center gap-3">
+                <div className="w-7 h-7 rounded-full bg-emerald-100 text-emerald-800 font-bold text-xs flex items-center justify-center shrink-0">
+                  {idx + 1}
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 flex-1">
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase">Crop Name / बाली</label>
+                    <input
+                      type="text"
+                      value={crop.name}
+                      onChange={(e) => updateCrop(crop.id, 'name', e.target.value)}
+                      className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg bg-white font-medium"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase">Area ({formData.areaUnit}) / क्षेत्रफल</label>
+                    <input
+                      type="number"
+                      step="0.1"
+                      value={crop.area}
+                      onChange={(e) => updateCrop(crop.id, 'area', e.target.value)}
+                      className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg bg-white font-bold"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase">Estimated Yield (kg) / उत्पादन</label>
+                    <input
+                      type="number"
+                      value={crop.yield}
+                      onChange={(e) => updateCrop(crop.id, 'yield', e.target.value)}
+                      className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg bg-white font-bold"
+                    />
+                  </div>
+                </div>
+                {formData.crops.length > 1 && (
+                  <button
+                    onClick={() => removeCrop(crop.id)}
+                    className="text-red-500 hover:text-red-700 p-1.5 rounded-lg hover:bg-red-50 text-xs shrink-0 self-end sm:self-center"
+                  >
+                    <Icon name="x" size={16} />
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+
+          <div className="pt-4 border-t border-slate-100 flex justify-between">
+            <button onClick={goToPrevStep} className="px-4 py-2 text-slate-600 font-bold text-xs rounded-xl hover:bg-slate-100">
+              ← Back
+            </button>
+            <button onClick={goToNextStep} className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl transition shadow-sm">
+              Next Step: Fertilizers →
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ── STEP 3: Soil Nutrition & Fertilizers ── */}
+      {currentStep === 3 && (
+        <div className="eco-card space-y-5 animate-fade-in">
+          <div className="border-b border-slate-100 pb-3">
+            <h2 className="text-lg font-extrabold text-slate-800">3. Soil Nutrition & Fertilizer Management</h2>
+            <p className="text-xs text-slate-500">कम्पोस्ट, बायोचार र रासायनिक मलको प्रयोग / Organic & synthetic nutrient quantities</p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
+                Organic Compost / Vermicompost (kg/year)
+              </label>
+              <input
+                type="number"
+                placeholder="e.g. 1500"
+                value={formData.compostKg}
+                onChange={(e) => setFormData({ ...formData, compostKg: e.target.value })}
+                className="w-full px-3 py-2.5 text-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-400 focus:outline-none font-bold"
+              />
+              <span className="text-[11px] text-emerald-700 font-medium mt-1 block">गोबर वा भर्मिकम्पोस्ट प्रयोग परिमाण</span>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
+                Biochar Application (kg/year)
+              </label>
+              <input
+                type="number"
+                placeholder="e.g. 250"
+                value={formData.biocharKg}
+                onChange={(e) => setFormData({ ...formData, biocharKg: e.target.value })}
+                className="w-full px-3 py-2.5 text-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-400 focus:outline-none font-bold"
+              />
+              <span className="text-[11px] text-emerald-700 font-medium mt-1 block">बायोचार वा प्राङ्गारिक कोइला परिमाण</span>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
+                Chemical Urea / DAP Fertilizer (kg/year)
+              </label>
+              <input
+                type="number"
+                placeholder="e.g. 100"
+                value={formData.chemicalKg}
+                onChange={(e) => setFormData({ ...formData, chemicalKg: e.target.value })}
+                className="w-full px-3 py-2.5 text-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-400 focus:outline-none font-bold"
+              />
+              <span className="text-[11px] text-slate-500 font-medium mt-1 block">रासायनिक यूरिया वा डीएपी परिमाण</span>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
+                Green Manuring / Cover Crops (हरियो मल)
+              </label>
+              <select
+                value={formData.coverCrop}
+                onChange={(e) => setFormData({ ...formData, coverCrop: e.target.value })}
+                className="w-full px-3 py-2.5 text-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-400 focus:outline-none bg-white font-medium"
+              >
+                <option value="yes">Yes, Year-round (वर्षैभरी हरियो मल/छापो)</option>
+                <option value="seasonal">Seasonal Cover Cropping (मौसमी हरियो मल - ढैंचा)</option>
+                <option value="no">No Cover Cropping (प्रयोग नगरिएको)</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="pt-4 border-t border-slate-100 flex justify-between">
+            <button onClick={goToPrevStep} className="px-4 py-2 text-slate-600 font-bold text-xs rounded-xl hover:bg-slate-100">
+              ← Back
+            </button>
+            <button onClick={goToNextStep} className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl transition shadow-sm">
+              Next Step: Irrigation →
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ── STEP 4: Irrigation & Energy ── */}
+      {currentStep === 4 && (
+        <div className="eco-card space-y-5 animate-fade-in">
+          <div className="border-b border-slate-100 pb-3">
+            <h2 className="text-lg font-extrabold text-slate-800">4. Irrigation Source & Energy Consumption</h2>
+            <p className="text-xs text-slate-500">सिँचाइ प्रविधि र इन्धन/बिजुली खपत / Irrigation technology & energy audit</p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Irrigation Method / सिँचाइ प्रणाली</label>
+              <select
+                value={formData.irrigation}
+                onChange={(e) => setFormData({ ...formData, irrigation: e.target.value })}
+                className="w-full px-3 py-2.5 text-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-400 focus:outline-none bg-white font-medium"
+              >
+                <option value="solar">Solar Submersible Pump (सौर्य सिँचाइ पम्प)</option>
+                <option value="drip">Drip Micro-irrigation (थोपा सिँचाइ प्रणाली)</option>
+                <option value="rainfed">Rainfed / Monsoon Water (आकाशे पानीमा आधारित)</option>
+                <option value="grid">Grid Electric Pump (विद्युतीय पम्प)</option>
+                <option value="diesel">Diesel Engine Pump (डिजेल पम्प)</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
+                Diesel Fuel Used (Liters / Month)
+              </label>
+              <input
+                type="number"
+                placeholder="e.g. 20"
+                value={formData.dieselLiters}
+                onChange={(e) => setFormData({ ...formData, dieselLiters: e.target.value })}
+                className="w-full px-3 py-2.5 text-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-400 focus:outline-none font-bold"
+              />
+              <span className="text-[11px] text-slate-500 font-medium mt-1 block">मासिक डिजेल खपत (लीटर)</span>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
+                Electricity Usage (kWh / Month)
+              </label>
+              <input
+                type="number"
+                placeholder="e.g. 50"
+                value={formData.electricityKwh}
+                onChange={(e) => setFormData({ ...formData, electricityKwh: e.target.value })}
+                className="w-full px-3 py-2.5 text-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-400 focus:outline-none font-bold"
+              />
+              <span className="text-[11px] text-slate-500 font-medium mt-1 block">मासिक बिजुली खपत (यूनिट)</span>
+            </div>
+          </div>
+
+          <div className="pt-4 border-t border-slate-100 flex justify-between">
+            <button onClick={goToPrevStep} className="px-4 py-2 text-slate-600 font-bold text-xs rounded-xl hover:bg-slate-100">
+              ← Back
+            </button>
+            <button onClick={goToNextStep} className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl transition shadow-sm">
+              Next Step: Tillage & Trees →
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ── STEP 5: Tillage, Residue & Agroforestry ── */}
+      {currentStep === 5 && (
+        <div className="eco-card space-y-5 animate-fade-in">
+          <div className="border-b border-slate-100 pb-3">
+            <h2 className="text-lg font-extrabold text-slate-800">5. Tillage, Residue & Agroforestry Trees</h2>
+            <p className="text-xs text-slate-500">माटो जोताई, ठूटो व्यवस्थापन र कृषि वन / Tillage intensity & tree sequestration</p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Tillage Practice / जोताई पद्धति</label>
+              <select
+                value={formData.tillage}
+                onChange={(e) => setFormData({ ...formData, tillage: e.target.value })}
+                className="w-full px-3 py-2.5 text-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-400 focus:outline-none bg-white font-medium"
+              >
+                <option value="zero">Zero Tillage / Direct Seeding (शून्य जोताई / नजोती रोप्ने)</option>
+                <option value="reduced">Reduced Tillage / Strip Tillage (न्यून जोताई)</option>
+                <option value="conventional">Conventional Deep Ploughing (परम्परागत गहिरो जोताई)</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Crop Residue Management / बाली अवशेष</label>
+              <select
+                value={formData.residue}
+                onChange={(e) => setFormData({ ...formData, residue: e.target.value })}
+                className="w-full px-3 py-2.5 text-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-400 focus:outline-none bg-white font-medium"
+              >
+                <option value="incorporate">Incorporate in Soil (माटोमा जोतेर मिसाउने)</option>
+                <option value="mulch">Surface Mulching (माटोमा छापो हाल्ने)</option>
+                <option value="feed">Livestock Feed & Fodder (गाईवस्तुलाई खुवाउने)</option>
+                <option value="burn">Field Burning (खेतमै डढाउने)</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Number of Boundary / Field Trees</label>
+              <input
+                type="number"
+                placeholder="e.g. 45"
+                value={formData.treesCount}
+                onChange={(e) => setFormData({ ...formData, treesCount: e.target.value })}
+                className="w-full px-3 py-2.5 text-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-400 focus:outline-none font-bold"
+              />
+              <span className="text-[11px] text-emerald-700 font-medium mt-1 block">खेतको डिल वा जग्गामा रहेका रुखहरूको संख्या</span>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Primary Tree Types / रुखको किसिम</label>
+              <input
+                type="text"
+                placeholder="e.g. Apple, Ipil-Ipil, Bamboo"
+                value={formData.treeType}
+                onChange={(e) => setFormData({ ...formData, treeType: e.target.value })}
+                className="w-full px-3 py-2.5 text-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-400 focus:outline-none"
+              />
+            </div>
+          </div>
+
+          <div className="pt-4 border-t border-slate-100 flex justify-between">
+            <button onClick={goToPrevStep} className="px-4 py-2 text-slate-600 font-bold text-xs rounded-xl hover:bg-slate-100">
+              ← Back
+            </button>
+            <button onClick={goToNextStep} className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl transition shadow-sm">
+              {isLivestockRelevant ? 'Next Step: Livestock →' : 'Next Step: Evidence →'}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ── STEP 6: Livestock & Manure (Shown for Mixed or Livestock farms) ── */}
+      {currentStep === 6 && isLivestockRelevant && (
+        <div className="eco-card space-y-5 animate-fade-in">
+          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+            <div>
+              <h2 className="text-lg font-extrabold text-slate-800">6. Livestock Numbers & Manure Management</h2>
+              <p className="text-xs text-slate-500">पशुधन संख्या र गोबर/मल व्यवस्थापन / Animals & bio-methane digesters</p>
+            </div>
+            <button
+              onClick={addAnimal}
+              className="px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-800 font-bold text-xs rounded-xl transition inline-flex items-center gap-1"
+            >
+              <Icon name="plus" size={14} /> Add Animal / + पशु थप्नुहोस्
+            </button>
+          </div>
+
+          <div className="space-y-3">
+            {formData.livestock.map((item, idx) => (
+              <div key={item.id} className="p-4 rounded-xl border border-slate-200 bg-slate-50/50 flex flex-col sm:flex-row sm:items-center gap-3">
+                <div className="w-7 h-7 rounded-full bg-emerald-100 text-emerald-800 font-bold text-xs flex items-center justify-center shrink-0">
+                  {idx + 1}
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 flex-1">
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase">Animal Type / पशुको प्रकार</label>
+                    <input
+                      type="text"
+                      value={item.type}
+                      onChange={(e) => updateAnimal(item.id, 'type', e.target.value)}
+                      className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg bg-white font-medium"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase">Head Count / संख्या</label>
+                    <input
+                      type="number"
+                      value={item.count}
+                      onChange={(e) => updateAnimal(item.id, 'count', e.target.value)}
+                      className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg bg-white font-bold"
+                    />
+                  </div>
+                </div>
+                {formData.livestock.length > 1 && (
+                  <button
+                    onClick={() => removeAnimal(item.id)}
+                    className="text-red-500 hover:text-red-700 p-1.5 rounded-lg hover:bg-red-50 text-xs shrink-0 self-end sm:self-center"
+                  >
+                    <Icon name="x" size={16} />
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Manure Management Method / गोबर व्यवस्थापन</label>
+            <select
+              value={formData.manureMgmt}
+              onChange={(e) => setFormData({ ...formData, manureMgmt: e.target.value })}
+              className="w-full px-3 py-2.5 text-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-400 focus:outline-none bg-white font-medium"
+            >
+              <option value="biogas">Biogas Digester Energy (बायोग्यास प्लान्ट जडान)</option>
+              <option value="compost">Composted into Vermicompost (कम्पोस्टिङ पिट)</option>
+              <option value="dried">Sun-dried dung cakes (सुकाएर प्रयोग)</option>
+              <option value="discharge">Direct stream discharge (सोझै निकास)</option>
+            </select>
+          </div>
+
+          <div className="pt-4 border-t border-slate-100 flex justify-between">
+            <button onClick={goToPrevStep} className="px-4 py-2 text-slate-600 font-bold text-xs rounded-xl hover:bg-slate-100">
+              ← Back
+            </button>
+            <button onClick={goToNextStep} className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl transition shadow-sm">
+              Next Step: Evidence →
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ── STEP 7: Optional Soil Report & Photo Evidence ── */}
+      {currentStep === 7 && (
+        <div className="eco-card space-y-5 animate-fade-in">
+          <div className="border-b border-slate-100 pb-3">
+            <h2 className="text-lg font-extrabold text-slate-800">7. Optional Evidence & Reports (प्रमाण पत्र)</h2>
+            <p className="text-xs text-slate-500">माटो परीक्षण रिपोर्ट वा फारमको तस्बिर अपलोड गर्नुहोस् / Optional verification media</p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="border-2 border-dashed border-slate-200 rounded-2xl p-6 text-center bg-slate-50 hover:bg-emerald-50/40 transition">
+              <div className="text-3xl mb-2">📄</div>
+              <p className="text-xs font-bold text-slate-700">Soil Test Lab Report (माटो परीक्षण)</p>
+              <p className="text-[11px] text-slate-400 mt-1">PDF or image of NARC / Krishi Gyan Kendra test</p>
               <input
                 type="file"
-                accept="video/*,image/*"
-                onChange={handleFileChange}
-                className="absolute inset-0 opacity-0 cursor-pointer"
+                accept=".pdf,.png,.jpg,.jpeg"
+                onChange={(e) => setFormData({ ...formData, soilReportFile: e.target.files[0]?.name || null })}
+                className="hidden"
+                id="soil-upload"
               />
-              <div className="text-4xl">📤</div>
-              <div className="text-xs font-bold text-slate-200">
-                {mediaFile ? `Selected: ${mediaFile.name}` : 'Click or Drag Video or Photo here'}
-              </div>
-              <div className="text-[10px] text-slate-500">Supports MP4, MOV, JPG, PNG • Max 100MB</div>
-              {mediaFile && (
-                <div className="px-3 py-1 bg-emerald-500/20 text-emerald-400 text-[10px] rounded-md font-bold uppercase tracking-wider">
-                  Ready to Scan ({mediaType})
-                </div>
-              )}
+              <label
+                htmlFor="soil-upload"
+                className="mt-3 inline-block px-4 py-1.5 bg-white border border-slate-300 rounded-xl text-xs font-bold text-slate-700 cursor-pointer hover:border-emerald-400"
+              >
+                {formData.soilReportFile ? `✓ ${formData.soilReportFile}` : 'Choose File'}
+              </label>
             </div>
 
-            <button
-              onClick={startAnalysis}
-              disabled={!mediaFile}
-              className={`w-full py-4 rounded-xl font-bold text-sm transition shadow-lg flex items-center justify-center gap-2 ${
-                mediaFile
-                  ? 'bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-extrabold'
-                  : 'bg-slate-800 text-slate-500 cursor-not-allowed'
-              }`}
-            >
-              <span>🔬</span> Analyze with AI Scanner
-            </button>
+            <div className="border-2 border-dashed border-slate-200 rounded-2xl p-6 text-center bg-slate-50 hover:bg-emerald-50/40 transition">
+              <div className="text-3xl mb-2">📷</div>
+              <p className="text-xs font-bold text-slate-700">Farm Photo / Video (खेतको तस्बिर)</p>
+              <p className="text-[11px] text-slate-400 mt-1">Photo of crops, drip lines, or trees</p>
+              <input
+                type="file"
+                accept="image/*,video/*"
+                onChange={(e) => setFormData({ ...formData, farmPhotoFile: e.target.files[0]?.name || null })}
+                className="hidden"
+                id="photo-upload"
+              />
+              <label
+                htmlFor="photo-upload"
+                className="mt-3 inline-block px-4 py-1.5 bg-white border border-slate-300 rounded-xl text-xs font-bold text-slate-700 cursor-pointer hover:border-emerald-400"
+              >
+                {formData.farmPhotoFile ? `✓ ${formData.farmPhotoFile}` : 'Choose File'}
+              </label>
+            </div>
           </div>
 
-          {/* Right Panel: Skip to Self Report */}
-          <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm flex flex-col justify-between space-y-6">
-            <div className="space-y-4">
-              <span className="inline-flex items-center px-2.5 py-0.5 rounded-md bg-slate-100 text-slate-600 text-[10px] font-bold border border-slate-200 uppercase tracking-wider">
-                Manual Pathway
-              </span>
-              <h2 className="text-2xl font-black text-slate-900">Skip and Self-Report</h2>
-              <p className="text-xs text-slate-500 leading-relaxed">
-                Don't have farm media on hand? You can still manually complete the comprehensive survey about your irrigation source, tillage practice, cropping biodiversity, and fertiliser cycles to compute a Trust Score.
-              </p>
-            </div>
-
-            <div className="p-6 bg-slate-50 rounded-2xl border border-slate-100 space-y-3">
-              <div className="flex items-center gap-2 text-xs font-bold text-slate-700">
-                <span className="text-emerald-600">✓</span> Full 6-part sustainability questionnaire
-              </div>
-              <div className="flex items-center gap-2 text-xs font-bold text-slate-700">
-                <span className="text-emerald-600">✓</span> Instant scorecard generator
-              </div>
-              <div className="flex items-center gap-2 text-xs font-bold text-slate-700">
-                <span className="text-emerald-600">✓</span> Standard confidence rating
-              </div>
-            </div>
-
-            <button
-              onClick={skipToManual}
-              className="w-full py-4 bg-slate-100 hover:bg-slate-200 text-slate-800 font-extrabold text-sm rounded-xl transition border border-slate-200 shadow-sm"
-            >
-              Continue to Questionnaire
+          <div className="pt-4 border-t border-slate-100 flex justify-between">
+            <button onClick={goToPrevStep} className="px-4 py-2 text-slate-600 font-bold text-xs rounded-xl hover:bg-slate-100">
+              ← Back
+            </button>
+            <button onClick={goToNextStep} className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl transition shadow-sm">
+              Review Form Data →
             </button>
           </div>
         </div>
       )}
 
-      {/* STAGE 2: AI ANALYZING SCREEN */}
-      {stage === 'analyzing' && (
-        <div className="max-w-xl mx-auto bg-slate-950 text-white rounded-3xl p-8 border border-slate-800 shadow-2xl space-y-8 relative overflow-hidden">
-          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-500 to-teal-400"></div>
-          
-          <div className="text-center space-y-2">
-            <div className="w-12 h-12 rounded-full border-4 border-emerald-500/20 border-t-emerald-500 animate-spin mx-auto"></div>
-            <h3 className="text-lg font-black mt-4">AI Vision Scanner Active</h3>
-            <p className="text-xs text-emerald-400 font-semibold">{scanMetric}</p>
+      {/* ── STEP 8: Final Review Step ── */}
+      {currentStep === 8 && (
+        <div className="eco-card space-y-5 animate-fade-in">
+          <div className="border-b border-slate-100 pb-3">
+            <span className="eco-badge eco-badge-info mb-2">🔍 Final Review</span>
+            <h2 className="text-lg font-extrabold text-slate-800">8. Review Collected Farm Data</h2>
+            <p className="text-xs text-slate-500">सबै विवरणहरूको अन्तिम समीक्षा गर्नुहोस् / Verify your entries before computing</p>
           </div>
 
-          {/* Core Detected Parameters list during live progress */}
-          <div className="space-y-3 bg-slate-900/50 p-6 rounded-2xl border border-slate-800/80">
-            <div className="flex items-center justify-between text-xs font-semibold">
-              <span className="text-slate-400">Vegetation cover</span>
-              <span className={scanProgress >= 20 ? 'text-emerald-400 font-bold' : 'text-slate-600'}>
-                {scanProgress >= 20 ? '✓ Detected' : 'Pending...'}
-              </span>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+            <div className="p-4 rounded-xl border border-slate-200 bg-white space-y-1.5">
+              <div className="font-extrabold uppercase text-[11px] text-emerald-800">1. Farm Profile</div>
+              <p><strong className="text-slate-700">Name:</strong> {formData.farmName}</p>
+              <p><strong className="text-slate-700">Location:</strong> {formData.location}</p>
+              <p><strong className="text-slate-700">Area:</strong> {formData.farmArea} {formData.areaUnit.toUpperCase()}</p>
+              <p><strong className="text-slate-700">Type:</strong> {formData.farmType}</p>
+              <button onClick={() => setCurrentStep(1)} className="text-sky-600 font-bold text-[10px] hover:underline mt-1">Edit Step 1</button>
             </div>
-            <div className="flex items-center justify-between text-xs font-semibold">
-              <span className="text-slate-400">Crop health (NDVI)</span>
-              <span className={scanProgress >= 40 ? 'text-emerald-400 font-bold' : 'text-slate-600'}>
-                {scanProgress >= 40 ? '✓ Calculated' : 'Pending...'}
-              </span>
-            </div>
-            <div className="flex items-center justify-between text-xs font-semibold">
-              <span className="text-slate-400">Bare soil boundary</span>
-              <span className={scanProgress >= 60 ? 'text-emerald-400 font-bold' : 'text-slate-600'}>
-                {scanProgress >= 60 ? '✓ Evaluated' : 'Pending...'}
-              </span>
-            </div>
-            <div className="flex items-center justify-between text-xs font-semibold">
-              <span className="text-slate-400">Tree & canopy counts</span>
-              <span className={scanProgress >= 80 ? 'text-emerald-400 font-bold' : 'text-slate-600'}>
-                {scanProgress >= 80 ? '✓ Counted' : 'Pending...'}
-              </span>
-            </div>
-            <div className="flex items-center justify-between text-xs font-semibold">
-              <span className="text-slate-400">Irrigation infrastructure</span>
-              <span className={scanProgress >= 100 ? 'text-emerald-400 font-bold' : 'text-slate-600'}>
-                {scanProgress >= 100 ? '✓ Scanned' : 'Pending...'}
-              </span>
-            </div>
-          </div>
 
-          <div className="space-y-2">
-            <div className="flex items-center justify-between text-xs font-bold">
-              <span>Overall Scan Progress</span>
-              <span>{scanProgress}%</span>
+            <div className="p-4 rounded-xl border border-slate-200 bg-white space-y-1.5">
+              <div className="font-extrabold uppercase text-[11px] text-emerald-800">2. Active Crops ({formData.crops.length})</div>
+              {formData.crops.map((c, idx) => (
+                <p key={c.id}>#{idx + 1} {c.name} — {c.area} {formData.areaUnit} ({c.yield} kg)</p>
+              ))}
+              <button onClick={() => setCurrentStep(2)} className="text-sky-600 font-bold text-[10px] hover:underline mt-1">Edit Step 2</button>
             </div>
-            <div className="w-full h-2 bg-slate-800 rounded-full overflow-hidden">
-              <div
-                className="h-full bg-gradient-to-r from-emerald-500 to-teal-400 transition-all duration-150"
-                style={{ width: `${scanProgress}%` }}
-              />
+
+            <div className="p-4 rounded-xl border border-slate-200 bg-white space-y-1.5">
+              <div className="font-extrabold uppercase text-[11px] text-emerald-800">3. Soil & Fertilizers</div>
+              <p><strong className="text-slate-700">Organic Compost:</strong> {formData.compostKg} kg/yr</p>
+              <p><strong className="text-slate-700">Biochar:</strong> {formData.biocharKg} kg/yr</p>
+              <p><strong className="text-slate-700">Chemical Fertilizer:</strong> {formData.chemicalKg} kg/yr</p>
+              <p><strong className="text-slate-700">Cover Crop:</strong> {formData.coverCrop}</p>
+              <button onClick={() => setCurrentStep(3)} className="text-sky-600 font-bold text-[10px] hover:underline mt-1">Edit Step 3</button>
+            </div>
+
+            <div className="p-4 rounded-xl border border-slate-200 bg-white space-y-1.5">
+              <div className="font-extrabold uppercase text-[11px] text-emerald-800">4. Irrigation & Energy</div>
+              <p><strong className="text-slate-700">Irrigation:</strong> {formData.irrigation}</p>
+              <p><strong className="text-slate-700">Diesel:</strong> {formData.dieselLiters} L/month</p>
+              <p><strong className="text-slate-700">Electricity:</strong> {formData.electricityKwh} kWh/month</p>
+              <button onClick={() => setCurrentStep(4)} className="text-sky-600 font-bold text-[10px] hover:underline mt-1">Edit Step 4</button>
+            </div>
+
+            <div className="p-4 rounded-xl border border-slate-200 bg-white space-y-1.5 sm:col-span-2">
+              <div className="font-extrabold uppercase text-[11px] text-emerald-800">5. Tillage & Trees</div>
+              <p><strong className="text-slate-700">Tillage:</strong> {formData.tillage} | <strong className="text-slate-700">Residue:</strong> {formData.residue} | <strong className="text-slate-700">Trees:</strong> {formData.treesCount} ({formData.treeType})</p>
+              <button onClick={() => setCurrentStep(5)} className="text-sky-600 font-bold text-[10px] hover:underline mt-1">Edit Step 5</button>
             </div>
           </div>
-        </div>
-      )}
 
-      {/* STAGE 3: QUESTIONNAIRE (CONDITIONAL) */}
-      {stage === 'questions' && (
-        <div className="max-w-3xl mx-auto bg-white p-8 rounded-3xl border border-slate-100 shadow-sm space-y-6">
-          <div className="border-b border-slate-100 pb-4">
-            <h2 className="text-xl font-black text-slate-900 flex items-center gap-2">
-              <span>📋</span> Follow-up Questionnaire
-            </h2>
-            <p className="text-xs text-slate-400 mt-1 font-semibold">
-              {mediaFile 
-                ? 'AI scanner successfully parsed your media. Verify these remaining essential parameters.'
-                : 'Complete the comprehensive list of operational parameters to self-report.'}
-            </p>
-          </div>
-
-          {/* Conditional Questionnaire */}
-          {mediaFile ? (
-            /* Essential questionnaire (2 questions) */
-            <div className="space-y-6">
-              <div className="p-4 bg-emerald-50 text-emerald-800 text-xs rounded-xl font-bold flex items-center gap-2 border border-emerald-100">
-                <span>⚡</span> AI Scan verified vegetation, soil levels, trees, and irrigation. Only crop and nutrients remain.
-              </div>
-
-              {/* Crop type */}
-              <div className="space-y-2">
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">Primary Crop Type</label>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  {['Basmati Rice', 'Mixed Vegetables', 'Orchards / Tea'].map((c) => (
-                    <button
-                      key={c}
-                      type="button"
-                      onClick={() => setAnswers({ ...answers, cropType: c })}
-                      className={`p-3 rounded-xl border text-xs font-bold text-left transition ${
-                        answers.cropType === c 
-                          ? 'border-emerald-500 bg-emerald-50 text-emerald-800' 
-                          : 'border-slate-200 hover:bg-slate-50 text-slate-700'
-                      }`}
-                    >
-                      {c}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Nutrients */}
-              <div className="space-y-2">
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">Nutrient & Fertiliser Strategy</label>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  {[
-                    { value: 'fully-organic', label: '100% Organic Manure' },
-                    { value: 'mixed', label: 'Integrated (Organic + Chemical)' },
-                    { value: 'chemical-intensive', label: 'Intensive Synthetic Urea' }
-                  ].map((item) => (
-                    <button
-                      key={item.value}
-                      type="button"
-                      onClick={() => setAnswers({ ...answers, fertilizerSource: item.value })}
-                      className={`p-3 rounded-xl border text-xs font-bold text-left transition ${
-                        answers.fertilizerSource === item.value 
-                          ? 'border-emerald-500 bg-emerald-50 text-emerald-800' 
-                          : 'border-slate-200 hover:bg-slate-50 text-slate-700'
-                      }`}
-                    >
-                      {item.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-          ) : (
-            /* Comprehensive questionnaire (6 questions) */
-            <div className="space-y-6">
-              {/* Q1: Vegetation Variety */}
-              <div className="space-y-2">
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">1. Vegetation Diversity</label>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {[
-                    { val: 'polyculture', title: 'Polyculture & Crop Rotation', desc: 'Diversified planting cycles & multi-cropping' },
-                    { val: 'monoculture', title: 'Monoculture Fields', desc: 'Repeated single-crop cycles only' }
-                  ].map((item) => (
-                    <button
-                      key={item.val}
-                      type="button"
-                      onClick={() => setAnswers({ ...answers, vegVariety: item.val })}
-                      className={`p-3 rounded-xl border text-left transition flex flex-col justify-center ${
-                        answers.vegVariety === item.val
-                          ? 'border-emerald-500 bg-emerald-50 text-emerald-800'
-                          : 'border-slate-200 hover:bg-slate-50 text-slate-700'
-                      }`}
-                    >
-                      <span className="text-xs font-bold">{item.title}</span>
-                      <span className="text-[10px] opacity-80 mt-0.5">{item.desc}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Q2: Pest strategy */}
-              <div className="space-y-2">
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">2. Crop Protection & Pest Strategy</label>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {[
-                    { val: 'ipm', title: 'Integrated Pest Management (IPM)', desc: 'Biological controls, sticky traps & minimal sprays' },
-                    { val: 'chemical', title: 'Chemical-Intensive Protection', desc: 'Frequent preventative chemical pesticides' }
-                  ].map((item) => (
-                    <button
-                      key={item.val}
-                      type="button"
-                      onClick={() => setAnswers({ ...answers, pestStrategy: item.val })}
-                      className={`p-3 rounded-xl border text-left transition flex flex-col justify-center ${
-                        answers.pestStrategy === item.val
-                          ? 'border-emerald-500 bg-emerald-50 text-emerald-800'
-                          : 'border-slate-200 hover:bg-slate-50 text-slate-700'
-                      }`}
-                    >
-                      <span className="text-xs font-bold">{item.title}</span>
-                      <span className="text-[10px] opacity-80 mt-0.5">{item.desc}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Q3: Bare Soil & Tillage */}
-              <div className="space-y-2">
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">3. Bare Soil & Tillage Practices</label>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {[
-                    { val: 'cover-zero', title: 'Cover Cropping + Low Tillage', desc: 'Soil covered year-round, minimal ground turning' },
-                    { val: 'heavy-tillage', title: 'Frequent Heavy Tillage', desc: 'Soil plowed multiple times, left bare post-harvest' }
-                  ].map((item) => (
-                    <button
-                      key={item.val}
-                      type="button"
-                      onClick={() => setAnswers({ ...answers, soilTillage: item.val })}
-                      className={`p-3 rounded-xl border text-left transition flex flex-col justify-center ${
-                        answers.soilTillage === item.val
-                          ? 'border-emerald-500 bg-emerald-50 text-emerald-800'
-                          : 'border-slate-200 hover:bg-slate-50 text-slate-700'
-                      }`}
-                    >
-                      <span className="text-xs font-bold">{item.title}</span>
-                      <span className="text-[10px] opacity-80 mt-0.5">{item.desc}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Q4: Trees & Agroforestry */}
-              <div className="space-y-2">
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">4. Presence of Trees & Buffer Zones</label>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {[
-                    { val: 'extensive', title: 'Active Boundary Agroforestry', desc: 'Frequent trees & foliage lines around fields' },
-                    { val: 'none', title: 'Clear-Cut Fields', desc: 'No trees or windbreaks along crop boundaries' }
-                  ].map((item) => (
-                    <button
-                      key={item.val}
-                      type="button"
-                      onClick={() => setAnswers({ ...answers, agroforestry: item.val })}
-                      className={`p-3 rounded-xl border text-left transition flex flex-col justify-center ${
-                        answers.agroforestry === item.val
-                          ? 'border-emerald-500 bg-emerald-50 text-emerald-800'
-                          : 'border-slate-200 hover:bg-slate-50 text-slate-700'
-                      }`}
-                    >
-                      <span className="text-xs font-bold">{item.title}</span>
-                      <span className="text-[10px] opacity-80 mt-0.5">{item.desc}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Q5: Water & Irrigation */}
-              <div className="space-y-2">
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">5. Water & Irrigation Source</label>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  {[
-                    { val: 'solar-drip', title: 'Solar Drip Systems' },
-                    { val: 'rainwater', title: 'Rainwater Capture' },
-                    { val: 'flood', title: 'Flood Canal Irrigation' }
-                  ].map((item) => (
-                    <button
-                      key={item.val}
-                      type="button"
-                      onClick={() => setAnswers({ ...answers, irrigationSource: item.val })}
-                      className={`p-3 rounded-xl border text-xs font-bold text-left transition ${
-                        answers.irrigationSource === item.val
-                          ? 'border-emerald-500 bg-emerald-50 text-emerald-800'
-                          : 'border-slate-200 hover:bg-slate-50 text-slate-700'
-                      }`}
-                    >
-                      {item.title}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Q6: Nutrients */}
-              <div className="space-y-2">
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">6. Fertiliser & Soil Nutrition</label>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  {[
-                    { val: 'organic-only', title: '100% Organic compost' },
-                    { val: 'mixed', title: 'Organic / Chemical Mix' },
-                    { val: 'chemical', title: 'Chemical Intensives' }
-                  ].map((item) => (
-                    <button
-                      key={item.val}
-                      type="button"
-                      onClick={() => setAnswers({ ...answers, chemicalFertilizer: item.val })}
-                      className={`p-3 rounded-xl border text-xs font-bold text-left transition ${
-                        answers.chemicalFertilizer === item.val
-                          ? 'border-emerald-500 bg-emerald-50 text-emerald-800'
-                          : 'border-slate-200 hover:bg-slate-50 text-slate-700'
-                      }`}
-                    >
-                      {item.title}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
-
-          <div className="pt-6 border-t border-slate-100 flex items-center justify-between">
-            <button
-              onClick={() => setStage('upload')}
-              className="px-4 py-2 hover:bg-slate-50 text-slate-500 font-bold text-xs rounded-xl transition"
-            >
+          <div className="pt-4 border-t border-slate-100 flex justify-between">
+            <button onClick={goToPrevStep} className="px-4 py-2 text-slate-600 font-bold text-xs rounded-xl hover:bg-slate-100">
               ← Back
             </button>
             <button
-              onClick={calculateFinalScores}
-              className="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs rounded-xl transition shadow-md"
+              onClick={calculateScoresAndCarbon}
+              className="px-6 py-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-extrabold text-sm rounded-xl transition shadow-md inline-flex items-center gap-2"
             >
-              Generate Sustainability Scorecard 🚀
+              🚀 Calculate Sustainability & Carbon Benefits
             </button>
           </div>
         </div>
       )}
 
-      {/* STAGE 4: RESULTS & DASHBOARD */}
-      {stage === 'results' && (
-        <div className="space-y-8 animate-fade-in">
-          {/* Main Trust Score & Confidence Bar */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div className="lg:col-span-2 bg-gradient-to-br from-slate-900 to-slate-950 text-white p-8 rounded-3xl border border-slate-800 shadow-xl relative overflow-hidden flex flex-col justify-between min-h-[300px]">
-              <div className="absolute top-0 right-0 w-80 h-80 bg-emerald-500/10 rounded-full blur-3xl"></div>
-              
-              <div className="relative z-10 space-y-4">
-                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 text-[10px] font-bold border border-emerald-500/30 uppercase tracking-wider">
-                  ESG Trust Score Report
-                </span>
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
-                  <div>
-                    <h2 className="text-3xl font-black tracking-tight">Sustainability Trust Score</h2>
-                    <p className="text-xs text-slate-400 mt-1 max-w-md">
-                      Weighted score assessing soil organic carbon retention, irrigation efficiency, synthetic nitrogen reliance, and local forest biodiversity.
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-1.5 px-6 py-3 bg-emerald-505 text-slate-950 font-black text-4xl rounded-2xl shadow-lg border border-emerald-400 shrink-0">
-                    <span className="text-slate-950">{scores.trustScore}</span>
-                    <span className="text-sm opacity-80 mt-2 text-slate-900">/ 100</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Confidence score */}
-              <div className="relative z-10 border-t border-slate-800 pt-6 mt-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div className="space-y-1">
-                  <div className="text-xs text-slate-400 font-bold uppercase tracking-wider flex items-center gap-1">
-                    🎯 Confidence Rating: <span className="text-emerald-400 font-black">{scores.confidenceScore}%</span>
-                  </div>
-                  <p className="text-[10px] text-slate-500 leading-normal">
-                    {mediaFile 
-                      ? 'High confidence score verified via computer vision analysis on uploaded media.'
-                      : 'Standard confidence rating based on self-reported operational practices.'}
-                  </p>
-                </div>
-                {mediaFile && (
-                  <div className="px-3 py-1.5 bg-emerald-500/10 text-emerald-400 text-xs rounded-xl font-bold flex items-center gap-1.5 border border-emerald-500/20">
-                    <span>✓</span> Media Verified Scan
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Recalculate options */}
-            <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm flex flex-col justify-between space-y-4">
+      {/* ── STEP 9: RESULTS DASHBOARD ── */}
+      {currentStep === 9 && results && (
+        <div className="space-y-6 animate-fade-in">
+          {/* Top Score Banner */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Sustainability Score */}
+            <div className="p-6 bg-gradient-to-br from-emerald-800 via-teal-800 to-emerald-900 text-white rounded-3xl shadow-md flex items-center justify-between">
               <div>
-                <h3 className="text-base font-black text-slate-900 flex items-center gap-1.5">
-                  <span>🔄</span> Adjust & Recalculate
-                </h3>
-                <p className="text-xs text-slate-500 mt-1 leading-relaxed">
-                  Have you recently installed drip irrigation, planted native trees, or transitioned to organic inputs? Update your answers to generate a fresh scorecard.
-                </p>
+                <span className="text-[10px] font-extrabold uppercase tracking-widest text-emerald-200">Index Score</span>
+                <h2 className="text-xl font-extrabold mt-1">Sustainability Score</h2>
+                <p className="text-xs text-emerald-100 mt-1 font-medium">दीगोपन सूचकांक (0-100)</p>
+                <p className="text-[11px] text-emerald-200 mt-2">Evaluates soil health, water efficiency & biodiversity.</p>
               </div>
-
-              {/* Mini update interface */}
-              <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 space-y-3">
-                <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Water System</label>
-                  <select
-                    value={mediaFile ? answers.cropType : answers.irrigationSource}
-                    onChange={(e) => {
-                      if (mediaFile) {
-                        setAnswers({ ...answers, cropType: e.target.value });
-                      } else {
-                        setAnswers({ ...answers, irrigationSource: e.target.value });
-                      }
-                    }}
-                    className="w-full bg-white border border-slate-200 rounded-xl p-2.5 text-xs font-bold text-slate-800 focus:outline-none focus:ring-1 focus:ring-emerald-500"
-                  >
-                    {mediaFile ? (
-                      <>
-                        <option value="Basmati Rice">Basmati Rice</option>
-                        <option value="Mixed Vegetables">Mixed Vegetables</option>
-                        <option value="Orchards / Tea">Orchards / Tea</option>
-                      </>
-                    ) : (
-                      <>
-                        <option value="solar-drip">Solar Drip Systems</option>
-                        <option value="rainwater">Rainwater Capture</option>
-                        <option value="flood">Flood Canal Irrigation</option>
-                      </>
-                    )}
-                  </select>
-                </div>
-
-                <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Fertiliser System</label>
-                  <select
-                    value={mediaFile ? answers.fertilizerSource : answers.chemicalFertilizer}
-                    onChange={(e) => {
-                      if (mediaFile) {
-                        setAnswers({ ...answers, fertilizerSource: e.target.value });
-                      } else {
-                        setAnswers({ ...answers, chemicalFertilizer: e.target.value });
-                      }
-                    }}
-                    className="w-full bg-white border border-slate-200 rounded-xl p-2.5 text-xs font-bold text-slate-800 focus:outline-none focus:ring-1 focus:ring-emerald-500"
-                  >
-                    {mediaFile ? (
-                      <>
-                        <option value="fully-organic">100% Organic Manure</option>
-                        <option value="mixed">Integrated Mix</option>
-                        <option value="chemical-intensive">Intensive Synthetic</option>
-                      </>
-                    ) : (
-                      <>
-                        <option value="organic-only">100% Organic compost</option>
-                        <option value="mixed">Organic / Chemical Mix</option>
-                        <option value="chemical">Chemical Intensives</option>
-                      </>
-                    )}
-                  </select>
-                </div>
+              <div className="text-center px-4 py-3 bg-white/15 border border-white/20 rounded-2xl shrink-0">
+                <span className="text-4xl font-black">{results.overallScore}</span>
+                <span className="text-xs text-emerald-200 block font-bold">/ 100</span>
               </div>
+            </div>
 
-              <button
-                onClick={calculateFinalScores}
-                className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs rounded-xl transition shadow-md flex items-center justify-center gap-1.5"
-              >
-                <span>🔄</span> Recalculate Score
-              </button>
+            {/* Estimated Carbon Benefit */}
+            <div className="p-6 bg-gradient-to-br from-sky-800 via-blue-800 to-indigo-900 text-white rounded-3xl shadow-md flex items-center justify-between">
+              <div>
+                <span className="text-[10px] font-extrabold uppercase tracking-widest text-sky-200">Carbon Estimate</span>
+                <h2 className="text-xl font-extrabold mt-1">Estimated Carbon Benefit</h2>
+                <p className="text-xs text-sky-100 mt-1 font-medium">अनुमानित कार्बन लाभ (tCO₂e / year)</p>
+                <p className="text-[11px] text-sky-200 mt-2">Calculated from tillage, biochar, trees & energy reduction.</p>
+              </div>
+              <div className="text-center px-4 py-3 bg-white/15 border border-white/20 rounded-2xl shrink-0">
+                <span className="text-3xl font-black">{results.estimatedCarbonBenefit}</span>
+                <span className="text-xs text-sky-200 block font-bold">tCO₂e / yr</span>
+              </div>
             </div>
           </div>
 
-          {/* Premium Gauge Charts Grid */}
-          <div className="bg-slate-50 p-6 rounded-3xl border border-slate-100 shadow-sm space-y-4">
-            <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider">Impact Scores Dashboard</h3>
+          {/* Critical Disclaimer */}
+          <div className="p-3.5 bg-amber-50 border border-amber-200 rounded-2xl text-xs text-amber-900 flex items-start gap-2.5">
+            <span className="text-base shrink-0">ℹ️</span>
+            <div>
+              <span className="font-bold">Important Notice:</span> Carbon values represent estimated annual sequestration/offsets and are NOT certified tradable carbon credits. Official registry verification is required before trading on carbon marketplaces.{' '}
+              <span className="text-amber-800 font-medium">नोट: यहाँ देखाइएको कार्बन मान अनुमानित लाभ हो, प्रमाणित कार्बन क्रेडिट होइन।</span>
+            </div>
+          </div>
+
+          {/* Sub-Score Gauges Grid */}
+          <div className="eco-card space-y-4">
+            <h3 className="text-sm font-extrabold text-slate-800 uppercase tracking-wider">
+              Category Impact Scores / विधागत सूचकांकहरू
+            </h3>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <GaugeChart value={scores.soilScore} label="Soil Health" strokeColor="stroke-emerald-500" />
-              <GaugeChart value={scores.waterScore} label="Water Efficiency" strokeColor="stroke-cyan-500" />
-              <GaugeChart value={scores.fertilizerScore} label="Fertilizer Impact" strokeColor="stroke-amber-500" />
-              <GaugeChart value={scores.carbonScore} label="Carbon Yield" strokeColor="stroke-teal-500" />
+              <GaugeChart value={results.soilScore} label="Soil Health" labelNe="माटोको स्वास्थ्य" strokeColor="stroke-emerald-500" />
+              <GaugeChart value={results.waterScore} label="Water Efficiency" labelNe="सिँचाइ क्षमता" strokeColor="stroke-cyan-500" />
+              <GaugeChart value={results.fertilizerScore} label="Nutrient Balance" labelNe="मल सन्तुलन" strokeColor="stroke-amber-500" />
+              <GaugeChart value={results.biodiversityScore} label="Biodiversity" labelNe="जैविक विविधता" strokeColor="stroke-teal-500" />
             </div>
           </div>
 
-          {/* AI Recommendations */}
-          <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm space-y-4">
-            <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
-              <span>💡</span> AI Recommendations & Action Plan
+          {/* Recommendations & Action Plan */}
+          <div className="eco-card space-y-4">
+            <h3 className="text-base font-extrabold text-slate-800 flex items-center gap-2">
+              <span>💡</span> Recommended Action Plan / सिफारिस गरिएका सुधारहरू
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {recommendations.map((rec) => (
-                <div
-                  key={rec.id}
-                  className={`p-4 rounded-2xl border transition ${
-                    rec.color === 'red'
-                      ? 'bg-red-50/50 border-red-100 text-red-950'
-                      : rec.color === 'emerald'
-                      ? 'bg-emerald-50/50 border-emerald-100 text-emerald-950'
-                      : 'bg-teal-50/50 border-teal-100 text-teal-950'
-                  }`}
-                >
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-xs font-bold">{rec.title}</span>
-                    <span
-                      className={`px-2 py-0.5 rounded-md text-[9px] font-extrabold uppercase shrink-0 ${
-                        rec.color === 'red'
-                          ? 'bg-red-100 text-red-800'
-                          : rec.color === 'emerald'
-                          ? 'bg-emerald-100 text-emerald-800'
-                          : 'bg-teal-100 text-teal-800'
-                      }`}
-                    >
-                      {rec.priority}
-                    </span>
+              {results.recommendations.map((rec, i) => (
+                <div key={i} className="p-4 rounded-2xl border border-slate-200 bg-slate-50/80 space-y-1">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-slate-800">{rec.title}</span>
+                    <span className="eco-badge eco-badge-success text-[9px]">{rec.badge}</span>
                   </div>
-                  <p className="text-xs mt-1.5 leading-relaxed opacity-95">{rec.text}</p>
+                  <p className="text-xs text-slate-600 leading-relaxed">{rec.text}</p>
                 </div>
               ))}
             </div>
           </div>
 
-          {/* Start Over Button */}
-          <div className="flex justify-center pt-4">
+          {/* Actions */}
+          <div className="flex flex-wrap justify-center gap-4 pt-2">
             <button
-              onClick={() => {
-                setMediaFile(null);
-                setStage('upload');
-              }}
-              className="px-6 py-3 bg-slate-100 hover:bg-slate-200 text-slate-800 font-extrabold text-xs rounded-xl transition border border-slate-200 shadow-sm"
+              onClick={() => setCurrentStep(1)}
+              className="px-6 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs rounded-xl border border-slate-200 transition"
             >
-              Start New Assessment
+              🔄 Recalculate / नयाँ मूल्यांकन गर्नुहोस्
             </button>
+            <Link
+              to="/carbon"
+              className="px-6 py-2.5 bg-sky-600 hover:bg-sky-700 text-white font-extrabold text-xs rounded-xl shadow-md transition inline-flex items-center gap-2"
+            >
+              💰 View Carbon Earnings & Send to Govt / कार्बन आम्दानी हेर्नुहोस्
+            </Link>
           </div>
         </div>
       )}

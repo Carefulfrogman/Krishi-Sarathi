@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import Sidebar from './components/Sidebar';
+import { LanguageProvider } from './context/LanguageContext';
 
 import Home from './pages/Home';
 import Dashboard from './pages/Dashboard';
@@ -42,7 +43,7 @@ function AppLayout({ user, onLogout, children }) {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col font-sans">
+    <div className="min-h-screen bg-[#F8F7F1] text-[#17251D] flex flex-col font-sans">
       <Navbar user={user} onLogout={onLogout} onToggleSidebar={() => setSidebarOpen(!sidebarOpen)} />
       
       <div className="flex-1 flex overflow-hidden">
@@ -66,35 +67,37 @@ export function App() {
   };
 
   return (
-    <Router>
-      <AppLayout user={user} onLogout={handleLogout}>
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/login" element={<Login onLogin={(u) => setUser(u)} />} />
-          <Route path="/signup" element={<Signup onSignup={(u) => setUser(u)} />} />
-          <Route path="/about" element={<AboutUs />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/farms/register" element={<FarmRegistration />} />
-          <Route path="/farms/:id" element={<FarmDetails />} />
-          <Route path="/marketplace" element={<Marketplace />} />
-          <Route path="/farm-marketplace" element={<FarmMarketplace />} />
-          <Route path="/list-product" element={<ListProduct />} />
-          <Route path="/carbon" element={<CarbonCredits />} />
-          <Route path="/sustainability" element={<SustainabilityScore />} />
-          <Route path="/assistant" element={<AiAssistant />} />
-          <Route path="/buyer/dashboard" element={<BuyerDashboard />} />
-          <Route path="/insurance" element={<InsuranceClaim />} />
-          <Route path="/disasters" element={<DisasterReport />} />
-          <Route path="/qr" element={<QRTrace />} />
-          <Route path="/supplychain" element={<SupplyChain />} />
-          <Route path="/reports" element={<Reports />} />
-          <Route path="/rewards" element={<Rewards />} />
-          <Route path="/profile" element={<Profile user={user} />} />
-          <Route path="/settings" element={<Settings />} />
-          <Route path="*" element={<Navigate to="/dashboard" replace />} />
-        </Routes>
-      </AppLayout>
-    </Router>
+    <LanguageProvider>
+      <Router>
+        <AppLayout user={user} onLogout={handleLogout}>
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/login" element={<Login onLogin={(u) => setUser(u)} />} />
+            <Route path="/signup" element={<Signup onSignup={(u) => setUser(u)} />} />
+            <Route path="/about" element={<AboutUs />} />
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/farms/register" element={<FarmRegistration />} />
+            <Route path="/farms/:id" element={<FarmDetails />} />
+            <Route path="/marketplace" element={<Marketplace />} />
+            <Route path="/farm-marketplace" element={<FarmMarketplace />} />
+            <Route path="/list-product" element={<ListProduct />} />
+            <Route path="/carbon" element={<CarbonCredits />} />
+            <Route path="/sustainability" element={<SustainabilityScore />} />
+            <Route path="/assistant" element={<AiAssistant />} />
+            <Route path="/buyer/dashboard" element={<BuyerDashboard />} />
+            <Route path="/insurance" element={<InsuranceClaim />} />
+            <Route path="/disasters" element={<DisasterReport />} />
+            <Route path="/qr" element={<QRTrace />} />
+            <Route path="/supplychain" element={<SupplyChain />} />
+            <Route path="/reports" element={<Reports />} />
+            <Route path="/rewards" element={<Rewards />} />
+            <Route path="/profile" element={<Profile user={user} />} />
+            <Route path="/settings" element={<Settings />} />
+            <Route path="*" element={<Navigate to="/dashboard" replace />} />
+          </Routes>
+        </AppLayout>
+      </Router>
+    </LanguageProvider>
   );
 }
 

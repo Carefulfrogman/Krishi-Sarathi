@@ -6,7 +6,6 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-
 class Settings(BaseModel):
     """Application settings loaded from environment variables."""
 

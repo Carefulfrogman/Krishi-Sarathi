@@ -6,8 +6,8 @@ import Icon from '../components/Icons';
 const localizations = {
   en: {
     title: 'AI Krishi Assistant',
-    subtitle: 'Multilingual smart helper for crops, soil, pests, and government schemes.',
-    placeholder: 'Ask about diseases, weather, soil reports, carbon credits...',
+    subtitle: 'Multilingual smart helper for crops, soil, pests, irrigation, and government schemes.',
+    placeholder: 'Ask anything about crop diseases, fertilizers, weather, soil reports, carbon credits...',
     send: 'Send',
     recording: 'Recording Voice...',
     clickRecord: 'Speak',
@@ -19,16 +19,17 @@ const localizations = {
     unrelatedTitle: 'Off-topic Query Detected',
     unrelatedMessage: "I'm sorry, I am programmed to assist only with agriculture, crops, soil, weather, fertilizers, carbon credits, insurance, and government farming schemes. Please ask a farming-related question!",
     quickPrompts: [
-      { text: 'Identify Paddy Leaf Disease', icon: 'sprout' },
-      { text: 'Best Fertilizer for Basmati Rice', icon: 'activity' },
+      { text: 'Identify Paddy Leaf Disease from photo', icon: 'sprout' },
+      { text: 'Best Organic Fertilizer for Basmati Rice', icon: 'activity' },
       { text: 'Subsidies for Solar Irrigation in Nepal', icon: 'shield' },
-      { text: 'Explain Carbon Credit trading steps', icon: 'award' }
+      { text: 'Explain Carbon Credit trading steps', icon: 'award' },
+      { text: 'Analyze Soil Test Report PDF Document', icon: 'file' }
     ]
   },
   ne: {
     title: 'एआई कृषि सहायक',
-    subtitle: 'बाली, माटो, कीरा, र सरकारी योजनाहरूको लागि बहुभाषिक स्मार्ट सहायक।',
-    placeholder: 'रोग, मौसम, माटो रिपोर्ट, कार्बन क्रेडिट बारे सोध्नुहोस्...',
+    subtitle: 'बाली, माटो, कीरा, सिँचाइ र सरकारी योजनाहरूको लागि बहुभाषिक स्मार्ट सहायक।',
+    placeholder: 'रोग, मौसम, माटो रिपोर्ट, मल, कार्बन क्रेडिट बारे सोध्नुहोस्...',
     send: 'पठाउनुहोस्',
     recording: 'आवाज रेकर्ड हुँदैछ...',
     clickRecord: 'बोल्नुहोस्',
@@ -40,10 +41,11 @@ const localizations = {
     unrelatedTitle: 'गैर-कृषि प्रश्न फेला पर्यो',
     unrelatedMessage: 'माफ गर्नुहोस्, म केवल कृषि, बाली, माटो, मौसम, मल, कार्बन क्रेडिट, बीमा र सरकारी खेती योजनाहरूमा मद्दत गर्न सक्छु। कृपया खेती सम्बन्धी प्रश्न सोध्नुहोस्!',
     quickPrompts: [
-      { text: 'धानको पातको रोग पहिचान गर्नुहोस्', icon: 'sprout' },
-      { text: 'बासमती धानका लागि उत्तम मल', icon: 'activity' },
-      { text: 'नेपालमा सौर्य सिँचाइ अनुदान', icon: 'shield' },
-      { text: 'कार्बन क्रेडिट व्यापार कसरी गर्ने?', icon: 'award' }
+      { text: 'तस्बिरबाट धानको पातको रोग पहिचान गर्नुहोस्', icon: 'sprout' },
+      { text: 'बासमती धानका लागि उत्तम जैविक मल', icon: 'activity' },
+      { text: 'नेपालमा सौर्य सिँचाइ अनुदान सम्बन्धी जानकारी', icon: 'shield' },
+      { text: 'कार्बन क्रेडिट व्यापार कसरी गर्ने?', icon: 'award' },
+      { text: 'माटो परीक्षण रिपोर्ट PDF विश्लेषण गर्नुहोस्', icon: 'file' }
     ]
   }
 };
@@ -57,8 +59,8 @@ export const AiAssistant = () => {
       id: 1,
       sender: 'ai',
       text: lang === 'en' 
-        ? 'Hello! I am your AI Krishi Assistant. You can upload images, videos, documents, or ask me questions about your fields.' 
-        : 'नमस्ते! म तपाईंको एआई कृषि सहायक हुँ। तपाईं तस्बिर, भिडियो, कागजात अपलोड गर्न सक्नुहुन्छ वा मलाई खेती सम्बन्धी प्रश्नहरू सोध्न सक्नुहुन्छ।',
+        ? 'Hello! I am your AI Krishi Assistant. You can upload photos of crop leaves, soil PDF documents, audio voice notes, or ask me any agricultural question.' 
+        : 'नमस्ते! म तपाईंको एआई कृषि सहायक हुँ। तपाईं बालीका पातका तस्बिर, माटो परीक्षण रिपोर्ट PDF, आवाज रेकर्ड, वा खेती सम्बन्धी जुनसुकै प्रश्नहरू सोध्न सक्नुहुन्छ।',
       confidence: 100,
       references: ['Krishi Saarathi Agriculture Core V2', 'NARC Research Guidelines'],
       followups: lang === 'en' 
@@ -79,14 +81,13 @@ export const AiAssistant = () => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isTyping]);
 
-  // Actual Voice Input via Web Speech API with better error handling
+  // Voice Input via Web Speech API
   const handleVoiceToggle = async () => {
     if (isRecording) {
       setIsRecording(false);
       recognitionRef.current?.stop();
     } else {
       try {
-        // Request microphone permission explicitly first for reliability
         await navigator.mediaDevices.getUserMedia({ audio: true });
         
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -96,7 +97,7 @@ export const AiAssistant = () => {
         }
         const recognition = new SpeechRecognition();
         recognition.lang = lang === 'en' ? 'en-US' : 'ne-NP';
-        recognition.interimResults = true; // Use interim results for smoother experience
+        recognition.interimResults = true;
         recognition.maxAlternatives = 1;
         
         let finalTranscript = '';
@@ -111,10 +112,9 @@ export const AiAssistant = () => {
               interimTranscript += event.results[i][0].transcript;
             }
           }
-          // Only update final text for stability, or append if previous text exists
           if (finalTranscript) {
-             setInputText(prev => prev.trim() + ' ' + finalTranscript.trim());
-             finalTranscript = ''; // reset after appending
+             setInputText(prev => (prev.trim() + ' ' + finalTranscript.trim()).trim());
+             finalTranscript = '';
           }
         };
         recognition.onerror = (event) => {
@@ -136,22 +136,52 @@ export const AiAssistant = () => {
     }
   };
 
+  const handleFileChange = (e) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setAttachedFile({
+          file: file,
+          name: file.name,
+          type: file.type || 'application/octet-stream',
+          base64: reader.result,
+          size: (file.size / 1024).toFixed(1) + ' KB'
+        });
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const handleSend = async () => {
     if (!inputText.trim() && !attachedFile) return;
 
     const userMsg = {
       id: Date.now(),
       sender: 'user',
-      text: inputText,
-      file: attachedFile ? { name: attachedFile.name, type: attachedFile.type } : null
+      text: inputText || (lang === 'en' ? `[Analyzed attached ${attachedFile.name}]` : `[संलग्न ${attachedFile.name} को विश्लेषण गर्नुहोस्]`),
+      file: attachedFile ? { 
+        name: attachedFile.name, 
+        type: attachedFile.type, 
+        size: attachedFile.size,
+        base64: attachedFile.base64
+      } : null
     };
 
     setMessages((prev) => [...prev, userMsg]);
     
-    // Build query for Gemini
     let queryText = inputText;
+    if (!queryText.trim() && attachedFile) {
+      queryText = `Please analyze the attached ${attachedFile.type.includes('image') ? 'photo' : attachedFile.type.includes('audio') ? 'audio voice clip' : 'document'} (${attachedFile.name}) for agricultural recommendations.`;
+    }
+
+    let filePayload = null;
     if (attachedFile) {
-        queryText = `[User attached file: ${attachedFile.name}] ${queryText}`;
+      filePayload = {
+        name: attachedFile.name,
+        type: attachedFile.type,
+        data: attachedFile.base64
+      };
     }
 
     setInputText('');
@@ -159,7 +189,6 @@ export const AiAssistant = () => {
     setIsTyping(true);
 
     try {
-      // Gather context from mockData
       const context = {
         farm: mockData.farms[0],
         weather: mockData.weather,
@@ -170,7 +199,12 @@ export const AiAssistant = () => {
         }
       };
 
-      const response = await aiService.askAiAssistant(queryText, lang === 'en' ? 'English' : 'Nepali', context);
+      const response = await aiService.askAiAssistant(
+        queryText, 
+        lang === 'en' ? 'English' : 'Nepali', 
+        context,
+        filePayload
+      );
       
       setMessages((prev) => [
         ...prev,
@@ -179,17 +213,17 @@ export const AiAssistant = () => {
           sender: 'ai',
           text: response.text,
           confidence: response.confidence || 98,
-          references: response.references || ["Generated by Krishi Saarathi AI (Gemini 2.5 Flash)"],
+          references: response.references || ["Generated by Krishi Saarathi AI"],
           followups: response.followups || []
         }
       ]);
     } catch (error) {
       console.error("AI Assistant Error:", error);
       const errorMsg = lang === 'en' 
-        ? `<h4 class="font-bold text-red-700 flex items-center gap-2 mb-3">⚠️ Service Unavailable</h4>
-           <p>I'm sorry, I am currently unable to connect to the AI server. Please check your internet connection or try again later.</p>`
-        : `<h4 class="font-bold text-red-700 flex items-center gap-2 mb-3">⚠️ सेवा उपलब्ध छैन</h4>
-           <p>माफ गर्नुहोस्, म अहिले एआई सर्भरमा जडान गर्न असमर्थ छु। कृपया आफ्नो इन्टरनेट जाँच गर्नुहोस् वा पछि प्रयास गर्नुहोस्।</p>`;
+        ? `<h4 class="font-bold text-red-700 flex items-center gap-2 mb-3">⚠️ Service Notice</h4>
+           <p>Unable to connect to the AI server. Please verify your connection or retry.</p>`
+        : `<h4 class="font-bold text-red-700 flex items-center gap-2 mb-3">⚠️ सेवा सूचना</h4>
+           <p>एआई सर्भरमा जडान गर्न सकिएन। कृपया आफ्नो इन्टरनेट जाँच गरी पुनः प्रयास गर्नुहोस्।</p>`;
            
       setMessages((prev) => [
         ...prev,
@@ -207,12 +241,6 @@ export const AiAssistant = () => {
     }
   };
 
-  const handleFileChange = (e) => {
-    if (e.target.files && e.target.files[0]) {
-      setAttachedFile(e.target.files[0]);
-    }
-  };
-
   const handleQuickPrompt = (promptText) => {
     setInputText(promptText);
   };
@@ -223,8 +251,8 @@ export const AiAssistant = () => {
         id: 1,
         sender: 'ai',
         text: lang === 'en' 
-          ? 'Chat cleared. Ask me anything about farming!' 
-          : 'च्याट खाली गरियो। खेती सम्बन्धी केही पनि सोध्नुहोस्!',
+          ? 'Chat cleared. Ask me anything about farming, soil, pests, or carbon credits!' 
+          : 'च्याट खाली गरियो। खेती, माटो, कीरा, वा कार्बन क्रेडिट बारे केही पनि सोध्नुहोस्!',
         confidence: 100,
         references: [],
         followups: []
@@ -232,105 +260,124 @@ export const AiAssistant = () => {
     ]);
   };
 
+  const getFileIcon = (fileType) => {
+    if (fileType.includes('image')) return '🖼️';
+    if (fileType.includes('audio')) return '🎵';
+    if (fileType.includes('pdf')) return '📄';
+    return '📎';
+  };
+
   return (
-    <div className="max-w-5xl mx-auto px-4 py-8 space-y-6 flex flex-col h-[85vh]">
+    <div className="max-w-6xl xl:max-w-7xl mx-auto px-4 py-4 sm:py-6 flex flex-col h-[calc(100vh-5.5rem)] min-h-[720px]">
       {/* Header & Language Toggle */}
-      <div className="p-6 bg-white rounded-3xl border border-slate-100 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4 relative overflow-hidden shrink-0">
-        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-red-600 via-blue-700 to-emerald-600"></div>
+      <div className="p-4 sm:p-5 bg-white rounded-3xl border border-slate-200/80 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4 relative overflow-hidden shrink-0 mb-4">
+        <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-emerald-600 via-blue-600 to-teal-500"></div>
         <div className="space-y-0.5">
-          <h1 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
-            <span>🤖</span> {t.title}
+          <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2.5">
+            <span className="text-2xl sm:text-3xl">🤖</span> {t.title}
           </h1>
-          <p className="text-xs text-slate-500 font-medium">{t.subtitle}</p>
+          <p className="text-xs sm:text-sm text-slate-500 font-medium">{t.subtitle}</p>
         </div>
         
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2.5">
           {/* Language Toggle buttons */}
           <button
             onClick={() => setLang('en')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition ${
-              lang === 'en' ? 'bg-emerald-600 text-white shadow-sm' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+            className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-extrabold transition shadow-xs ${
+              lang === 'en' ? 'bg-emerald-600 text-white shadow-emerald-200' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
             }`}
           >
             English
           </button>
           <button
             onClick={() => setLang('ne')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition ${
-              lang === 'ne' ? 'bg-emerald-600 text-white shadow-sm' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+            className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-extrabold transition shadow-xs ${
+              lang === 'ne' ? 'bg-emerald-600 text-white shadow-emerald-200' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
             }`}
           >
             नेपाली (Nepali)
           </button>
           <button
             onClick={handleClear}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition ml-2"
+            className="p-2 rounded-xl text-slate-400 hover:text-red-500 hover:bg-red-50 transition ml-1"
             title={t.clearChat}
           >
-            <Icon name="trash" size={18} />
+            <Icon name="trash" size={20} />
           </button>
         </div>
       </div>
 
-      {/* Main Chat Interface */}
-      <div className="flex-1 min-h-0 bg-white rounded-3xl border border-slate-100 shadow-sm flex flex-col md:flex-row overflow-hidden">
+      {/* Main Chat Interface - Roomier & Expanded Height */}
+      <div className="flex-1 min-h-0 bg-white rounded-3xl border border-slate-200/80 shadow-md flex flex-col md:flex-row overflow-hidden">
         
-        {/* Left Side: Chat History Box */}
+        {/* Left Side: Chat History Area */}
         <div className="flex-1 flex flex-col min-h-0">
-          <div className="flex-1 overflow-y-auto p-6 space-y-6">
+          <div className="chat-scroll-area flex-1 p-6 sm:p-8 space-y-6">
             {messages.map((msg) => (
               <div
                 key={msg.id}
                 className={`flex flex-col ${msg.sender === 'user' ? 'items-end' : 'items-start'}`}
               >
-                {/* Message Bubble */}
+                {/* Message Bubble - Wider & More Readable */}
                 <div
-                  className={`max-w-xl p-4 rounded-2xl text-sm leading-relaxed ${
+                  className={`max-w-3xl sm:max-w-4xl p-5 sm:p-6 rounded-3xl text-sm sm:text-base leading-relaxed ${
                     msg.sender === 'user'
-                      ? 'bg-emerald-600 text-white font-medium rounded-tr-none'
-                      : 'bg-slate-50 text-slate-800 border border-slate-100 rounded-tl-none shadow-sm'
+                      ? 'bg-emerald-600 text-white font-medium rounded-tr-none shadow-md'
+                      : 'bg-slate-50 text-slate-800 border border-slate-100 rounded-tl-none shadow-xs'
                   }`}
                 >
-                  {/* File preview inside message if user sent a file */}
+                  {/* File attachment preview inside message */}
                   {msg.file && (
-                    <div className="flex items-center gap-2 mb-2 p-2 bg-slate-900/10 rounded-lg text-xs font-bold">
-                      <span>📄</span> {msg.file.name}
+                    <div className="mb-3.5 p-3 bg-slate-900/10 rounded-2xl text-xs sm:text-sm font-semibold flex items-center justify-between gap-3 border border-white/20">
+                      <span className="flex items-center gap-2 truncate">
+                        <span className="text-lg">{getFileIcon(msg.file.type)}</span>
+                        <span className="truncate font-bold">{msg.file.name}</span>
+                      </span>
+                      {msg.file.size && <span className="text-xs opacity-80 shrink-0">{msg.file.size}</span>}
                     </div>
                   )}
+
+                  {/* Image preview thumbnail if uploaded photo */}
+                  {msg.file && msg.file.type.includes('image') && msg.file.base64 && (
+                    <div className="mb-4 rounded-2xl overflow-hidden max-h-64 border border-white/30 shadow-xs">
+                      <img src={msg.file.base64} alt={msg.file.name} className="w-full h-auto object-cover" />
+                    </div>
+                  )}
+
                   {msg.sender === 'ai' ? (
-                    <div dangerouslySetInnerHTML={{ __html: msg.text }} className="ai-formatted-content" />
+                    <div dangerouslySetInnerHTML={{ __html: msg.text }} className="ai-formatted-content space-y-3" />
                   ) : (
                     msg.text
                   )}
 
                   {/* Confidence rating for AI replies */}
-                  {msg.sender === 'ai' && msg.confidence && (
-                    <div className="mt-2 pt-2 border-t border-slate-100 flex items-center justify-between text-[10px] text-slate-500 font-bold uppercase tracking-wider">
+                  {msg.sender === 'ai' && msg.confidence > 0 && (
+                    <div className="mt-4 pt-3 border-t border-slate-200/60 flex items-center justify-between text-xs text-slate-400 font-bold uppercase tracking-wider">
                       <span>{t.confidence}</span>
-                      <span className="text-emerald-600 font-black">{msg.confidence}%</span>
+                      <span className="text-emerald-700 font-black">{msg.confidence}%</span>
                     </div>
                   )}
                 </div>
 
                 {/* References and Suggested Follow-ups for AI messages */}
                 {msg.sender === 'ai' && (msg.references?.length > 0 || msg.followups?.length > 0) && (
-                  <div className="mt-2 pl-3 border-l-2 border-slate-200 space-y-2 max-w-xl">
+                  <div className="mt-3 pl-4 border-l-2 border-emerald-500/40 space-y-2.5 max-w-3xl sm:max-w-4xl">
                     {msg.references?.length > 0 && (
-                      <div className="text-[10px] text-slate-400 font-medium">
-                        <span className="font-extrabold uppercase">{t.references}: </span>
-                        {msg.references.join(', ')}
+                      <div className="text-xs text-slate-400 font-medium">
+                        <span className="font-extrabold uppercase text-slate-500">{t.references}: </span>
+                        {msg.references.join(' • ')}
                       </div>
                     )}
 
                     {msg.followups?.length > 0 && (
-                      <div className="flex flex-wrap gap-1.5 pt-1">
+                      <div className="flex flex-wrap gap-2 pt-1">
                         {msg.followups.map((q, idx) => (
                           <button
                             key={idx}
                             onClick={() => handleQuickPrompt(q)}
-                            className="px-2.5 py-1 bg-slate-100 hover:bg-emerald-50 text-slate-600 hover:text-emerald-800 text-[10px] font-bold rounded-lg border border-slate-200 transition"
+                            className="px-3.5 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-900 text-xs sm:text-sm font-extrabold rounded-xl border border-emerald-200/80 transition shadow-xs text-left"
                           >
-                            {q}
+                            💡 {q}
                           </button>
                         ))}
                       </div>
@@ -342,28 +389,31 @@ export const AiAssistant = () => {
 
             {/* Typing Indicator */}
             {isTyping && (
-              <div className="flex items-center gap-1.5 p-4 bg-slate-50 border border-slate-100 rounded-2xl rounded-tl-none w-20">
-                <span className="w-2 h-2 bg-slate-400 rounded-full animate-bounce"></span>
-                <span className="w-2 h-2 bg-slate-400 rounded-full animate-bounce [animation-delay:0.2s]"></span>
-                <span className="w-2 h-2 bg-slate-400 rounded-full animate-bounce [animation-delay:0.4s]"></span>
+              <div className="flex items-center gap-2.5 p-4 sm:p-5 bg-slate-50 border border-slate-100 rounded-3xl rounded-tl-none w-36 shadow-xs">
+                <span className="w-2.5 h-2.5 bg-emerald-600 rounded-full animate-bounce"></span>
+                <span className="w-2.5 h-2.5 bg-emerald-600 rounded-full animate-bounce [animation-delay:0.2s]"></span>
+                <span className="w-2.5 h-2.5 bg-emerald-600 rounded-full animate-bounce [animation-delay:0.4s]"></span>
+                <span className="text-xs text-slate-500 font-bold ml-1">AI Thinking</span>
               </div>
             )}
 
             <div ref={chatEndRef} />
           </div>
 
-          {/* Interactive controls */}
-          <div className="p-4 border-t border-slate-100 bg-slate-50/50 space-y-3 shrink-0">
+          {/* Interactive Input Bar */}
+          <div className="p-4 sm:p-5 border-t border-slate-100 bg-slate-50/80 space-y-3 shrink-0">
             
-            {/* File attachment preview */}
+            {/* File attachment preview bar */}
             {attachedFile && (
-              <div className="flex items-center justify-between p-2 bg-emerald-50 text-emerald-800 border border-emerald-100 rounded-xl text-xs font-bold">
-                <span className="flex items-center gap-1.5">
-                  <span>📄</span> {attachedFile.name}
+              <div className="flex items-center justify-between p-3 bg-emerald-50 text-emerald-900 border border-emerald-200 rounded-2xl text-xs sm:text-sm font-bold shadow-xs">
+                <span className="flex items-center gap-2 truncate">
+                  <span className="text-xl">{getFileIcon(attachedFile.type)}</span>
+                  <span className="truncate">{attachedFile.name}</span>
+                  <span className="text-xs text-emerald-600 font-normal shrink-0">({attachedFile.size})</span>
                 </span>
                 <button
                   onClick={() => setAttachedFile(null)}
-                  className="text-emerald-700 hover:text-red-500 font-bold"
+                  className="px-2.5 py-1 text-emerald-700 hover:text-red-600 hover:bg-red-50 rounded-xl font-black transition"
                 >
                   ✕
                 </button>
@@ -372,33 +422,33 @@ export const AiAssistant = () => {
 
             {/* Waveform Recording Animation */}
             {isRecording && (
-              <div className="flex items-center justify-between p-3 bg-red-50 text-red-800 border border-red-100 rounded-xl text-xs font-bold">
-                <span className="flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-ping"></span>
+              <div className="flex items-center justify-between p-3.5 bg-red-50 text-red-800 border border-red-200 rounded-2xl text-xs sm:text-sm font-bold shadow-xs">
+                <span className="flex items-center gap-2.5">
+                  <span className="w-3 h-3 rounded-full bg-red-500 animate-ping"></span>
                   {t.recording}
                 </span>
-                {/* Waveform graphic */}
-                <div className="flex items-center gap-0.5 h-6">
-                  <span className="w-0.5 bg-red-500 rounded-full animate-pulse h-3"></span>
-                  <span className="w-0.5 bg-red-500 rounded-full animate-pulse h-5 [animation-delay:0.1s]"></span>
-                  <span className="w-0.5 bg-red-500 rounded-full animate-pulse h-2 [animation-delay:0.2s]"></span>
-                  <span className="w-0.5 bg-red-500 rounded-full animate-pulse h-6 [animation-delay:0.3s]"></span>
-                  <span className="w-0.5 bg-red-500 rounded-full animate-pulse h-4 [animation-delay:0.4s]"></span>
+                <div className="flex items-center gap-1.5 h-6">
+                  <span className="w-1 bg-red-500 rounded-full animate-pulse h-3"></span>
+                  <span className="w-1 bg-red-500 rounded-full animate-pulse h-6 [animation-delay:0.1s]"></span>
+                  <span className="w-1 bg-red-500 rounded-full animate-pulse h-3 [animation-delay:0.2s]"></span>
+                  <span className="w-1 bg-red-500 rounded-full animate-pulse h-6 [animation-delay:0.3s]"></span>
+                  <span className="w-1 bg-red-500 rounded-full animate-pulse h-4 [animation-delay:0.4s]"></span>
                 </div>
               </div>
             )}
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
               {/* File Upload Button */}
               <div className="relative">
                 <input
                   type="file"
                   onChange={handleFileChange}
-                  className="absolute inset-0 opacity-0 cursor-pointer w-10 h-10"
+                  accept="image/*,audio/*,.pdf,.doc,.docx,.txt"
+                  className="absolute inset-0 opacity-0 cursor-pointer w-12 h-12 z-10"
                 />
                 <button
                   type="button"
-                  className="w-10 h-10 bg-white hover:bg-slate-100 text-slate-500 border border-slate-200 rounded-xl transition flex items-center justify-center shadow-xs"
+                  className="w-12 h-12 bg-white hover:bg-slate-100 text-slate-600 border border-slate-200/90 rounded-2xl transition flex items-center justify-center shadow-xs text-xl"
                   title={t.upload}
                 >
                   📎
@@ -409,60 +459,63 @@ export const AiAssistant = () => {
               <button
                 type="button"
                 onClick={handleVoiceToggle}
-                className={`w-10 h-10 border rounded-xl transition flex items-center justify-center shadow-xs ${
+                className={`w-12 h-12 border rounded-2xl transition flex items-center justify-center shadow-xs text-xl ${
                   isRecording 
-                    ? 'bg-red-500 border-red-500 text-white' 
-                    : 'bg-white hover:bg-slate-100 text-slate-500 border-slate-200'
+                    ? 'bg-red-500 border-red-500 text-white animate-pulse' 
+                    : 'bg-white hover:bg-slate-100 text-slate-600 border-slate-200/90'
                 }`}
                 title={t.clickRecord}
               >
                 🎤
               </button>
 
-              {/* Input text */}
+              {/* Input text field */}
               <input
                 type="text"
                 value={inputText}
                 onChange={(e) => setInputText(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSend()}
                 placeholder={t.placeholder}
-                className="flex-1 bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-800"
+                className="flex-1 bg-white border border-slate-200/90 rounded-2xl px-5 py-3 text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-900 shadow-xs"
               />
 
               <button
                 onClick={handleSend}
-                className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-sm rounded-xl transition shadow-md"
+                className="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-sm sm:text-base rounded-2xl transition shadow-md flex items-center gap-2 shrink-0"
               >
-                {t.send}
+                <span>{t.send}</span>
+                <span className="text-lg">➔</span>
               </button>
             </div>
           </div>
         </div>
 
         {/* Right Side: Quick Prompts & Info */}
-        <div className="w-full md:w-72 border-t md:border-t-0 md:border-l border-slate-100 p-6 bg-slate-50/50 space-y-6 shrink-0 flex flex-col justify-between">
+        <div className="w-full md:w-80 border-t md:border-t-0 md:border-l border-slate-100 p-6 bg-slate-50/60 space-y-6 shrink-0 flex flex-col justify-between">
           <div className="space-y-4">
-            <h3 className="text-xs font-extrabold text-slate-500 uppercase tracking-wider">Quick Templates</h3>
-            <div className="space-y-2">
+            <h3 className="text-xs font-extrabold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+              <span>💡</span> Smart Templates
+            </h3>
+            <div className="space-y-2.5">
               {t.quickPrompts.map((p, idx) => (
                 <button
                   key={idx}
                   onClick={() => handleQuickPrompt(p.text)}
-                  className="w-full p-3 bg-white hover:bg-emerald-50 text-left border border-slate-200 rounded-xl text-xs font-bold text-slate-700 hover:text-emerald-800 transition flex items-start gap-2.5"
+                  className="w-full p-3.5 bg-white hover:bg-emerald-50 text-left border border-slate-200 hover:border-emerald-300 rounded-2xl text-xs sm:text-sm font-bold text-slate-700 hover:text-emerald-900 transition flex items-start gap-3 shadow-xs"
                 >
-                  <span className="text-base text-emerald-600">💡</span>
-                  <span>{p.text}</span>
+                  <span className="text-lg text-emerald-600 shrink-0">🌿</span>
+                  <span className="leading-snug">{p.text}</span>
                 </button>
               ))}
             </div>
           </div>
 
-          <div className="p-4 bg-emerald-50 border border-emerald-100/50 rounded-2xl">
-            <h4 className="text-xs font-extrabold text-emerald-800 flex items-center gap-1.5">
-              <span>🌾</span> MOALD & NARC Guidelines
+          <div className="p-4 sm:p-5 bg-emerald-50 border border-emerald-200/70 rounded-2xl space-y-2 shadow-xs">
+            <h4 className="text-xs sm:text-sm font-extrabold text-emerald-900 flex items-center gap-2">
+              <span>🌾</span> NARC & MoALD Aligned
             </h4>
-            <p className="text-[10px] text-emerald-700 font-medium leading-relaxed mt-1">
-              Suggestions align with Agricultural Research Council (NARC) and Government subsidy guidelines. Use GPS metadata uploads for automated credit scores.
+            <p className="text-xs text-emerald-800 font-medium leading-relaxed">
+              Provides multimodal sustainability recommendations, crop disease diagnosis, organic fertilizer ratios, and carbon credit marketplace guidance in English and Nepali.
             </p>
           </div>
         </div>

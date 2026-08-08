@@ -1,42 +1,65 @@
 @import "tailwindcss";
 
 @theme {
-  --color-primary-green: #1B5E20;
-  --color-secondary-green: #4CAF50;
-  --color-accent-green: #8BC34A;
-  --color-soil-brown: #8D6E63;
-  --color-golden-harvest: #F9A825;
-  --color-sunrise: #FB8C00;
-  --color-mountain-gray: #607D8B;
-  --color-bg-cream: #FAF9F4;
-  --color-charcoal: #263238;
+  --color-deep-forest: #063822;
+  --color-agri-green: #174F32;
+  --color-olive-green: #7B8428;
+  --color-sage-green: #8F9665;
+  --color-golden-harvest: #D99A17;
+  --color-mountain-beige: #B4B394;
+  --color-warm-white: #F8F7F1;
+  --color-deep-text: #17251D;
+  --color-soft-gray: #E5E8E3;
+
+  /* Aliases for legacy component class mapping */
+  --color-primary-green: #063822;
+  --color-secondary-green: #174F32;
+  --color-accent-green: #7B8428;
+  --color-soil-brown: #8F9665;
+  --color-mountain-gray: #B4B394;
+  --color-bg-cream: #F8F7F1;
+  --color-charcoal: #17251D;
 }
 
 :root {
-  --primary: #4a7c59;      /* Warm, earthy green */
-  --primary-hover: #3d6649;
-  --primary-light: #eaf2eb;
-  --primary-dark: #2c4d36;
-  --accent: #d4a373;       /* Warm sandy accent */
-  --bg-main: #faf7f2;      /* Warm off-white / stone */
-  --card-bg: #ffffff;
-  --text-main: #3a352f;    /* Charcoal/brown instead of harsh black */
-  --text-muted: #8c8273;
-  --border-color: #e8e2d9;
-  --shadow-sm: 0 4px 14px 0 rgba(140, 130, 115, 0.08);
-  --shadow-md: 0 10px 24px -4px rgba(140, 130, 115, 0.12);
-  --shadow-lg: 0 20px 30px -8px rgba(140, 130, 115, 0.15);
+  --deep-forest: #063822;      /* 🌲 Primary brand, navbar, headings */
+  --agri-green: #174F32;       /* 🌿 Buttons, active states */
+  --olive-green: #7B8428;      /* 🫒 Secondary accents, crops */
+  --sage-green: #8F9665;       /* 🌱 Cards, secondary backgrounds */
+  --golden-harvest: #D99A17;   /* 🌾 Highlights, icons, important actions */
+  --mountain-beige: #B4B394;   /* 🏔️ Subtle illustrations/backgrounds */
+  --warm-white: #F8F7F1;       /* 🤍 Main page background */
+  --deep-text: #17251D;        /* 🖤 Primary text */
+  --soft-gray: #E5E8E3;        /* 🌫️ Borders/dividers */
+
+  --primary: #174F32;
+  --primary-hover: #063822;
+  --primary-light: #F8F7F1;
+  --primary-dark: #063822;
+  --accent: #D99A17;
+  --bg-main: #F8F7F1;
+  --card-bg: #FFFFFF;
+  --text-main: #17251D;
+  --text-muted: #7B8428;
+  --border-color: #E5E8E3;
+
+  --shadow-sm: 0 4px 14px 0 rgba(23, 37, 29, 0.05);
+  --shadow-md: 0 10px 24px -4px rgba(6, 56, 34, 0.1);
   --font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
 }
 
 body {
   margin: 0;
   padding: 0;
-  background-color: var(--bg-main);
-  color: var(--text-main);
+  background-color: var(--warm-white);
+  color: var(--deep-text);
   font-family: var(--font-family);
   -webkit-font-smoothing: antialiased;
   min-height: 100vh;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  color: var(--deep-forest);
 }
 
 #root {
@@ -49,7 +72,7 @@ body {
 /* Custom UI Components */
 .eco-card {
   background: var(--card-bg);
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--soft-gray);
   border-radius: 1rem;
   padding: 1.5rem;
   box-shadow: var(--shadow-sm);
@@ -58,7 +81,7 @@ body {
 
 .eco-card:hover {
   box-shadow: var(--shadow-md);
-  border-color: #cbd5e1;
+  border-color: var(--sage-green);
 }
 
 .eco-badge {
@@ -68,24 +91,27 @@ body {
   padding: 0.25rem 0.75rem;
   border-radius: 9999px;
   font-size: 0.75rem;
-  font-weight: 600;
+  font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
 
 .eco-badge-success {
-  background-color: #dcfce7;
-  color: #15803d;
+  background-color: #f0f7f3;
+  color: #063822;
+  border: 1px solid #cce5d8;
 }
 
 .eco-badge-warning {
-  background-color: #fef9c3;
-  color: #a16207;
+  background-color: #fff9eb;
+  color: #D99A17;
+  border: 1px solid #fce8b3;
 }
 
 .eco-badge-info {
-  background-color: #e0f2fe;
-  color: #0369a1;
+  background-color: #f4f6ea;
+  color: #7B8428;
+  border: 1px solid #d9e0b2;
 }
 
 .eco-badge-danger {
@@ -94,11 +120,11 @@ body {
 }
 
 .btn-primary {
-  background-color: var(--primary);
+  background-color: var(--agri-green);
   color: #ffffff;
-  font-weight: 600;
+  font-weight: 700;
   padding: 0.625rem 1.25rem;
-  border-radius: 0.5rem;
+  border-radius: 0.75rem;
   border: none;
   cursor: pointer;
   display: inline-flex;
@@ -109,17 +135,17 @@ body {
 }
 
 .btn-primary:hover {
-  background-color: var(--primary-hover);
+  background-color: var(--deep-forest);
   transform: translateY(-1px);
 }
 
 .btn-secondary {
   background-color: #ffffff;
-  color: var(--text-main);
-  font-weight: 600;
+  color: var(--deep-text);
+  font-weight: 700;
   padding: 0.625rem 1.25rem;
-  border-radius: 0.5rem;
-  border: 1px solid var(--border-color);
+  border-radius: 0.75rem;
+  border: 1px solid var(--soft-gray);
   cursor: pointer;
   display: inline-flex;
   align-items: center;
@@ -129,14 +155,8 @@ body {
 }
 
 .btn-secondary:hover {
-  background-color: #f1f5f9;
-}
-
-/* Glassmorphism accent background */
-.glass-panel {
-  background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  background-color: var(--warm-white);
+  border-color: var(--agri-green);
 }
 
 /* Custom Scrollbar */
@@ -146,25 +166,14 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-  background: #f1f5f9;
+  background: var(--warm-white);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
+  background: var(--mountain-beige);
   border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
-}
-
-/* Leaflet Custom Marker Override */
-.custom-leaflet-marker-sleek {
-  background: none !important;
-  border: none !important;
-}
-
-@keyframes scan {
-  0%, 100% { top: 10%; }
-  50% { top: 90%; }
+  background: var(--sage-green);
 }
